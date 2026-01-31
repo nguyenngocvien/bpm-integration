@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.idd.config.entiry.ServiceConfig;
-import com.idd.config.repository.ServiceConfigRepository;
+import com.idd.shared.entity.ServiceConfig;
+import com.idd.shared.repository.ServiceConfigRepository;
 
 public final class ServiceConfigCache {
 

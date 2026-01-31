@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.idd.config.cache.ServiceConfigCache;
-import com.idd.config.entiry.ERROR_CODE;
-import com.idd.config.entiry.Response;
-import com.idd.config.entiry.ServiceConfig;
-import com.idd.config.entiry.SiLog;
+import com.idd.shared.entity.ERROR_CODE;
+import com.idd.shared.entity.Response;
+import com.idd.shared.entity.ServiceConfig;
+import com.idd.shared.entity.SiLog;
 import com.idd.shared.util.BpmLogger;
 import com.idd.shared.util.DbLogHelper;
 import com.idd.shared.util.JsonHelper;
@@ -53,7 +53,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 		    	cstmt = conn.prepareCall(sql);
 		    	
 		    	List<SQLParam> params = SQLHelper.parseParamValue(sqlConfig.getParams(), input);
-		    	log.setToInput(JsonHelper.stringify(params));
+		    	log.setToInput(SQLHelper.buildInputLog(sql, params));
 		    	
 		    	applyInputParams(cstmt, params);
 		    	

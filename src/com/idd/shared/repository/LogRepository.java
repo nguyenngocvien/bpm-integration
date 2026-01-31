@@ -1,10 +1,10 @@
-package com.idd.config.repository;
+package com.idd.shared.repository;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import com.idd.config.entiry.SiLog;
+import com.idd.shared.entity.SiLog;
 import com.idd.shared.util.BpmLogger;
 
 public class LogRepository {

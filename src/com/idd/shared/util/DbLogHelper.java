@@ -2,9 +2,9 @@ package com.idd.shared.util;
 
 import java.sql.Connection;
 
-import com.idd.config.entiry.ERROR_CODE;
-import com.idd.config.entiry.SiLog;
-import com.idd.config.repository.LogRepository;
+import com.idd.shared.entity.ERROR_CODE;
+import com.idd.shared.entity.SiLog;
+import com.idd.shared.repository.LogRepository;
 
 public class DbLogHelper {
 	

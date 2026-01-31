@@ -1,6 +1,6 @@
 package com.idd.config.cache;
 
-import com.idd.config.entiry.ServiceConfig;
+import com.idd.shared.entity.ServiceConfig;
 
 class CachedConfig {
     ServiceConfig config;

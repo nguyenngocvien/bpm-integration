@@ -1,6 +1,7 @@
 package com.idd.sql.service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,5 +73,12 @@ public class SQLHelper {
 	    }
 
 	    return params;
+	}
+	
+	public static String buildInputLog(String sql, List<SQLParam> params) {
+		Map<String, Object> input = new HashMap<>();
+		input.put("sql", sql);
+		input.put("params", params);
+		return JsonHelper.stringify(input);
 	}
 }
