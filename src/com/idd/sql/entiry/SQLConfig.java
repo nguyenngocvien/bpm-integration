@@ -1,12 +1,12 @@
-package com.idd.db.entiry;
+package com.idd.sql.entiry;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SqlConfig {
+public class SQLConfig {
 	private String dataSourceName;
 	
-	private DbExecuteType dbExecuteType;
+	private SQLExecuteType dbExecuteType;
 	
     private String sqlStatement;
     
@@ -14,17 +14,17 @@ public class SqlConfig {
     private String packageName;
     private String procedureName;
     
-    private List<SqlParam> params = new ArrayList<>();
+    private List<SQLParam> params = new ArrayList<>();
     
-    public SqlConfig procedureConfig (
+    public SQLConfig procedureConfig (
     		String dataSourceName, 
     		String schema,
     		String packageName,
     		String procedureName,
-    		List<SqlParam> params
+    		List<SQLParam> params
     	) {
     	this.dataSourceName = dataSourceName;
-    	this.dbExecuteType = DbExecuteType.PROCEDURE;
+    	this.dbExecuteType = SQLExecuteType.PROCEDURE;
     	this.schema = schema;
     	this.packageName = packageName;
     	this.procedureName = procedureName;
@@ -37,7 +37,7 @@ public class SqlConfig {
 		return dataSourceName;
 	}
 
-	public DbExecuteType getDbExecuteType() {
+	public SQLExecuteType getDbExecuteType() {
 		return dbExecuteType;
 	}
 
@@ -57,7 +57,8 @@ public class SqlConfig {
 		return procedureName;
 	}
 
-	public List<SqlParam> getParams() {
+	public List<SQLParam> getParams() {
 		return params;
 	}
 }
+

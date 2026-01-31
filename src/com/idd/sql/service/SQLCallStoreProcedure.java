@@ -1,0 +1,213 @@
+package com.idd.sql.service;
+
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.idd.config.cache.ServiceConfigCache;
+import com.idd.config.entiry.ERROR_CODE;
+import com.idd.config.entiry.Response;
+import com.idd.config.entiry.ServiceConfig;
+import com.idd.config.entiry.SiLog;
+import com.idd.shared.util.BpmLogger;
+import com.idd.shared.util.DbLogHelper;
+import com.idd.shared.util.JsonHelper;
+import com.idd.sql.entiry.SQLConfig;
+import com.idd.sql.entiry.SQLParam;
+
+public class SQLCallStoreProcedure extends SQLConnector {
+	
+	private final static String SYSTEM = "DB";
+
+	public SQLCallStoreProcedure(String dataSourceName) {
+		super(dataSourceName);
+	}
+	
+	public Object execute(String procedureName, String input, String traceId) {
+		
+		Connection conn = null;
+        CallableStatement cstmt = null;
+        
+        SiLog log = SiLog.init(
+			traceId,
+            procedureName,
+            input,
+            SYSTEM
+        );
+        
+        try {
+			conn = getConnection();
+			
+			try {
+				ServiceConfig serviceConfig = ServiceConfigCache.get(conn, procedureName);				
+				SQLConfig sqlConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), SQLConfig.class);
+		    	log.setService(sqlConfig.getPackageName() + "." + sqlConfig.getProcedureName());
+		    	
+		    	String sql = buildCallSql(sqlConfig);
+		    	cstmt = conn.prepareCall(sql);
+		    	applyInputParams(cstmt, sqlConfig.getParams(), input);
+		    	log.setToInput(JsonHelper.stringify(sqlConfig.getParams()));
+		    	
+		    	cstmt.execute();
+		    	
+		    	Map<String, Object> output = extractOutParams(cstmt, sqlConfig.getParams());
+		    	log.setFromOutput(JsonHelper.stringify(output));
+		    	
+		    	Long logId = DbLogHelper.saveSuccess(
+	            	conn,
+	                log,
+	                serviceConfig.isLogEnabled(),
+	                JsonHelper.stringify(output)
+	            );
+		    	
+		    	return Response.success(output, logId);
+			} catch (IllegalArgumentException e) {
+
+			    BpmLogger.warn("Invalid SQL configuration" + e);
+
+			    Long logId = DbLogHelper.saveError(conn, log, e, ERROR_CODE.ERROR);
+			    
+			    String message = e.getMessage() != null
+			            ? e.getMessage()
+			            : e.getClass().getSimpleName();
+
+			    return Response.error("EX-01", message, logId);
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				Long logId = DbLogHelper.saveError(
+	            	conn,
+	                log,
+	                e,
+	                ERROR_CODE.ERROR
+	            );
+				
+				return Response.error(ERROR_CODE.ERROR.getCode(), "Database execution error", logId);
+			} catch (Exception e) {
+				e.printStackTrace();
+				Long logId = DbLogHelper.saveError(
+	            	conn,
+	                log,
+	                e,
+	                ERROR_CODE.ERROR
+	            );
+				
+				String message = e.getMessage() != null
+			            ? e.getMessage()
+			            : e.getClass().getSimpleName();
+				
+				return Response.error(ERROR_CODE.ERROR.getCode(), message, logId);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+            try { if (cstmt != null) cstmt.close(); } catch (Exception e) {}
+            try { if (conn != null) conn.close(); } catch (Exception e) {}
+		}
+        
+        return Response.error(ERROR_CODE.ERROR.getCode(), ERROR_CODE.ERROR.getDefaultMessage());
+	}
+
+	private String buildCallSql(SQLConfig config) {
+
+        String fullName =
+            config.getSchema() + "." +
+            config.getPackageName() + "." +
+            config.getProcedureName();
+
+        String placeholders = String.join(
+            ",", Collections.nCopies(config.getParams().size(), "?")
+        );
+
+        return "{ call " + fullName + "(" + placeholders + ") }";
+    }
+	
+	private void applyInputParams(
+	        CallableStatement cstmt,
+	        List<SQLParam> params,
+	        String input  
+	) throws SQLException {
+		
+		if (params == null) {
+	        throw new IllegalArgumentException("SQL params is null");
+	    }
+
+	    if (input == null || input.isEmpty()) {
+	        throw new IllegalArgumentException("Input data is null");
+	    }
+	    
+		Map<String, Object> map = JsonHelper.parseToMap(input);
+
+	    for (SQLParam param : params) {
+	    	
+	    	if (param == null) {
+	            throw new IllegalArgumentException("SQLParam is null");
+	        }
+
+	    	Object value = JsonHelper.getByPath(map, param.getInputMapping());
+	    	value = value != null ? value : param.getDefaultValue();
+	    	
+	    	if (param.isIn()) {
+	    		param.setValue(value);
+	    		
+		        if (value == null) {
+		            cstmt.setNull(param.getParamIndex(), param.getSqlType());
+		        } else {
+		            cstmt.setObject(param.getParamIndex(), value, param.getSqlType());
+		        }
+			}
+	    	
+	    	if (param.isOut()) {
+				cstmt.registerOutParameter(param.getParamIndex(), param.getSqlType());
+			}
+	    }
+	}
+
+
+	private Map<String, Object> extractOutParams(CallableStatement cstmt, List<SQLParam> params) throws SQLException {
+		
+		Map<String, Object> outResult = new LinkedHashMap<>();
+		
+	    for (SQLParam param : params) {
+	    	if (param.isOut()) {
+	    		Object value = cstmt.getObject(param.getParamIndex());
+	    		if (value instanceof ResultSet) {
+	    		    ResultSet rs = (ResultSet) value;
+	    		    value = convertResultSet(rs);
+	    		}
+		        outResult.put(param.getOutputMapping(), value);
+	    	};
+	    }
+
+	    return outResult;
+	}
+	
+	private List<Map<String, Object>> convertResultSet(ResultSet rs)
+	        throws SQLException {
+
+	    List<Map<String, Object>> rows = new ArrayList<>();
+	    ResultSetMetaData meta = rs.getMetaData();
+	    int columnCount = meta.getColumnCount();
+
+	    while (rs.next()) {
+	        Map<String, Object> row = new LinkedHashMap<>();
+	        for (int i = 1; i <= columnCount; i++) {
+	            String colName = meta.getColumnLabel(i);
+	            Object value = rs.getObject(i);
+	            row.put(colName, value);
+	        }
+	        rows.add(row);
+	    }
+
+	    rs.close(); // ⚠️ QUAN TRỌNG
+	    return rows;
+	}
+}
