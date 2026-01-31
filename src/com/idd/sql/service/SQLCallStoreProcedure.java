@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,10 +49,13 @@ public class SQLCallStoreProcedure extends SQLConnector {
 				SQLConfig sqlConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), SQLConfig.class);
 		    	log.setService(sqlConfig.getPackageName() + "." + sqlConfig.getProcedureName());
 		    	
-		    	String sql = buildCallSql(sqlConfig);
+		    	String sql = SQLHelper.buildCallSql(sqlConfig);
 		    	cstmt = conn.prepareCall(sql);
-		    	applyInputParams(cstmt, sqlConfig.getParams(), input);
-		    	log.setToInput(JsonHelper.stringify(sqlConfig.getParams()));
+		    	
+		    	List<SQLParam> params = SQLHelper.parseParamValue(sqlConfig.getParams(), input);
+		    	log.setToInput(JsonHelper.stringify(params));
+		    	
+		    	applyInputParams(cstmt, params);
 		    	
 		    	cstmt.execute();
 		    	
@@ -115,53 +117,28 @@ public class SQLCallStoreProcedure extends SQLConnector {
         
         return Response.error(ERROR_CODE.ERROR.getCode(), ERROR_CODE.ERROR.getDefaultMessage());
 	}
-
-	private String buildCallSql(SQLConfig config) {
-
-        String fullName =
-            config.getSchema() + "." +
-            config.getPackageName() + "." +
-            config.getProcedureName();
-
-        String placeholders = String.join(
-            ",", Collections.nCopies(config.getParams().size(), "?")
-        );
-
-        return "{ call " + fullName + "(" + placeholders + ") }";
-    }
 	
 	private void applyInputParams(
 	        CallableStatement cstmt,
-	        List<SQLParam> params,
-	        String input  
+	        List<SQLParam> params  
 	) throws SQLException {
 		
 		if (params == null) {
 	        throw new IllegalArgumentException("SQL params is null");
 	    }
 
-	    if (input == null || input.isEmpty()) {
-	        throw new IllegalArgumentException("Input data is null");
-	    }
-	    
-		Map<String, Object> map = JsonHelper.parseToMap(input);
-
 	    for (SQLParam param : params) {
 	    	
 	    	if (param == null) {
 	            throw new IllegalArgumentException("SQLParam is null");
 	        }
-
-	    	Object value = JsonHelper.getByPath(map, param.getInputMapping());
-	    	value = value != null ? value : param.getDefaultValue();
 	    	
 	    	if (param.isIn()) {
-	    		param.setValue(value);
 	    		
-		        if (value == null) {
+		        if (param.getValue() == null) {
 		            cstmt.setNull(param.getParamIndex(), param.getSqlType());
 		        } else {
-		            cstmt.setObject(param.getParamIndex(), value, param.getSqlType());
+		            cstmt.setObject(param.getParamIndex(), param.getValue(), param.getSqlType());
 		        }
 			}
 	    	
@@ -207,7 +184,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 	        rows.add(row);
 	    }
 
-	    rs.close(); // ⚠️ QUAN TRỌNG
+	    rs.close();
 	    return rows;
 	}
 }

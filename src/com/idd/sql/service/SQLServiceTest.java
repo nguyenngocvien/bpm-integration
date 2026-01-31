@@ -12,8 +12,9 @@ public class SQLServiceTest {
 					.callStoreProcedure(
 						"dataSourceTest", 
 						"LOAD_TEAM_FILTER", 
-						"{\"function\":\"INPUT\",\"role\":\"RM_R,RM_C,BOM_DVKD\",\"moduleCode\":\"DVT\"}", 
-						"sss"
+//						"{\"laneCode\":\"INPUT\",\"roleCode\":\"RM_R,RM_C,BOM_DVKD\",\"moduleCode\":\"DVT\"}",
+						"{\"laneCode\":\"INPUT\",\"roleCode\":\"RM_R,RM_C,BOM_DVKD\"}",
+						"ssss"
 					);
 			
 			System.out.println(JsonHelper.stringify(result));
