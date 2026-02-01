@@ -1,15 +1,18 @@
 package com.idd.shared.util;
 
-import java.sql.Connection;
-
 import com.idd.shared.entity.ERROR_CODE;
 import com.idd.shared.entity.SiLog;
 import com.idd.shared.repository.LogRepository;
 
-public class DbLogHelper {
+public class LogHelper {
 	
-    public static Long saveSuccess(
-    		Connection conn,
+	private final LogRepository logRepository;
+	
+	public LogHelper(String dataSourceName) {
+		this.logRepository = new LogRepository(dataSourceName);
+	}
+	
+    public Long saveSuccess(
     		SiLog log,
     		Boolean isLogEnabled,
             String result
@@ -23,11 +26,10 @@ public class DbLogHelper {
         log.setErrorCode(ERROR_CODE.SUCCESS.getCode());
         log.setErrorMessage(ERROR_CODE.SUCCESS.getDefaultMessage());
 
-        return LogRepository.writeLog(conn, log);
+        return logRepository.writeLog(log);
     }
     
-    public static Long saveError(
-    		Connection conn,
+    public Long saveError(
             SiLog log,
             Exception ex,
             ERROR_CODE errorCode
@@ -37,7 +39,7 @@ public class DbLogHelper {
         log.setErrorMessage(ex.getMessage());
         log.setStacktrace(StackTraceUtil.getStackTraceAsString(ex));
 
-        return LogRepository.writeLog(conn, log);
+        return logRepository.writeLog(log);
     }
 
     private static String elapsed(long start) {

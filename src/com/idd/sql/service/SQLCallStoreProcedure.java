@@ -15,8 +15,9 @@ import com.idd.shared.entity.ERROR_CODE;
 import com.idd.shared.entity.Response;
 import com.idd.shared.entity.ServiceConfig;
 import com.idd.shared.entity.SiLog;
+import com.idd.shared.sqlconnector.SQLConnector;
 import com.idd.shared.util.BpmLogger;
-import com.idd.shared.util.DbLogHelper;
+import com.idd.shared.util.LogHelper;
 import com.idd.shared.util.JsonHelper;
 import com.idd.sql.entiry.SQLConfig;
 import com.idd.sql.entiry.SQLParam;
@@ -24,19 +25,24 @@ import com.idd.sql.entiry.SQLParam;
 public class SQLCallStoreProcedure extends SQLConnector {
 	
 	private final static String SYSTEM = "DB";
+	private final LogHelper logHelper;
+	private final ServiceConfigCache serviceConfigCache;
 
-	public SQLCallStoreProcedure(String dataSourceName) {
+	public SQLCallStoreProcedure(
+			String dataSourceName) {
 		super(dataSourceName);
+		this.logHelper = new LogHelper(dataSourceName);
+		this.serviceConfigCache = new ServiceConfigCache(dataSourceName);
 	}
 	
-	public Object execute(String procedureName, String input, String traceId) {
+	public Object execute(String serviceCode, String input, String traceId) {
 		
 		Connection conn = null;
         CallableStatement cstmt = null;
         
         SiLog log = SiLog.init(
 			traceId,
-            procedureName,
+            serviceCode,
             input,
             SYSTEM
         );
@@ -45,7 +51,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 			conn = getConnection();
 			
 			try {
-				ServiceConfig serviceConfig = ServiceConfigCache.get(conn, procedureName);				
+				ServiceConfig serviceConfig = serviceConfigCache.get(serviceCode);				
 				SQLConfig sqlConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), SQLConfig.class);
 		    	log.setService(sqlConfig.getPackageName() + "." + sqlConfig.getProcedureName());
 		    	
@@ -62,8 +68,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 		    	Map<String, Object> output = extractOutParams(cstmt, sqlConfig.getParams());
 		    	log.setFromOutput(JsonHelper.stringify(output));
 		    	
-		    	Long logId = DbLogHelper.saveSuccess(
-	            	conn,
+		    	Long logId = logHelper.saveSuccess(
 	                log,
 	                serviceConfig.isLogEnabled(),
 	                JsonHelper.stringify(output)
@@ -74,7 +79,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 
 			    BpmLogger.warn("Invalid SQL configuration" + e);
 
-			    Long logId = DbLogHelper.saveError(conn, log, e, ERROR_CODE.ERROR);
+			    Long logId = logHelper.saveError(log, e, ERROR_CODE.ERROR);
 			    
 			    String message = e.getMessage() != null
 			            ? e.getMessage()
@@ -84,8 +89,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 
 			} catch (SQLException e) {
 				e.printStackTrace();
-				Long logId = DbLogHelper.saveError(
-	            	conn,
+				Long logId = logHelper.saveError(
 	                log,
 	                e,
 	                ERROR_CODE.ERROR
@@ -94,8 +98,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 				return Response.error(ERROR_CODE.ERROR.getCode(), "Database execution error", logId);
 			} catch (Exception e) {
 				e.printStackTrace();
-				Long logId = DbLogHelper.saveError(
-	            	conn,
+				Long logId = logHelper.saveError(
 	                log,
 	                e,
 	                ERROR_CODE.ERROR

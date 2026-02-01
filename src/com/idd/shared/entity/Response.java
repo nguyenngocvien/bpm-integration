@@ -5,7 +5,7 @@ import java.util.Map;
 public class Response {
 	private String code;
     private String message;
-    private Map<String, Object> data;
+    private Object data;
     private String logId;
     
     public Response() {
@@ -13,6 +13,16 @@ public class Response {
 	}
     
     public static Response success(Map<String, Object> data, Long logId) {
+    	Response r = new Response();
+    	r.code = ERROR_CODE.SUCCESS.getCode();
+    	r.message = ERROR_CODE.SUCCESS.getDefaultMessage();
+    	r.data = data;
+    	r.logId = logId.toString();
+    	
+    	return r;
+	}
+    
+    public static Response success(String data, Long logId) {
     	Response r = new Response();
     	r.code = ERROR_CODE.SUCCESS.getCode();
     	r.message = ERROR_CODE.SUCCESS.getDefaultMessage();
@@ -47,7 +57,7 @@ public class Response {
 		return message;
 	}
 
-	public Map<String, Object> getData() {
+	public Object getData() {
 		return data;
 	}
 

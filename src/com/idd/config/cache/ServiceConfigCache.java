@@ -1,13 +1,28 @@
 package com.idd.config.cache;
 
-import java.sql.Connection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.idd.shared.entity.ServiceConfig;
 import com.idd.shared.repository.ServiceConfigRepository;
 
-public final class ServiceConfigCache {
+public class ServiceConfigCache {
+	
+	class CachedConfig {
+	    ServiceConfig config;
+	    long cachedAt;
+
+	    CachedConfig(ServiceConfig config) {
+	        this.config = config;
+	        this.cachedAt = System.currentTimeMillis();
+	    }
+
+	    boolean isExpired(long ttlMs) {
+	        return System.currentTimeMillis() - cachedAt > ttlMs;
+	    }
+	}
+	
+	private final ServiceConfigRepository configRepository;
 
     private static final ConcurrentMap<String, CachedConfig> CACHE =
         new ConcurrentHashMap<>();
@@ -16,9 +31,11 @@ public final class ServiceConfigCache {
     private static final long TTL_MS =
         Long.getLong("si.config.cache.ttl.ms", 5 * 60 * 1000L);
 
-    private ServiceConfigCache() {}
+    public ServiceConfigCache(String dataSourcename) {
+    	this.configRepository = new ServiceConfigRepository(dataSourcename);
+    }
 
-    public static ServiceConfig get(Connection conn, String serviceCode) {
+    public ServiceConfig get(String serviceCode) {
         CachedConfig cached = CACHE.get(serviceCode);
 
         if (cached != null && !cached.isExpired(TTL_MS)) {
@@ -31,8 +48,7 @@ public final class ServiceConfigCache {
                 return cached.config;
             }
 
-            ServiceConfig fresh =
-                ServiceConfigRepository.loadFromDb(conn, serviceCode);
+            ServiceConfig fresh = configRepository.loadFromDb(serviceCode);
 
             if (fresh != null) {
                 CACHE.put(serviceCode, new CachedConfig(fresh));

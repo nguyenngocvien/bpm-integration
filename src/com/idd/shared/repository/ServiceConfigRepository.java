@@ -5,14 +5,24 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import com.idd.shared.entity.ServiceConfig;
+import com.idd.shared.sqlconnector.SQLConnector;
 import com.idd.shared.util.BpmLogger;
 
-public class ServiceConfigRepository {
+public class ServiceConfigRepository extends SQLConnector {
 
-    private static final String SQL = "SELECT * FROM SI_VERSION WHERE SERVICE_NAME = ? AND STATUS = '1' ORDER BY SERVICE_VERSION DESC FETCH FIRST 1 ROWS ONLY";
+	private static final String SQL = "SELECT * FROM SI_VERSION WHERE SERVICE_NAME = ? AND STATUS = '1' ORDER BY SERVICE_VERSION DESC FETCH FIRST 1 ROWS ONLY";
 
-	public static ServiceConfig loadFromDb(Connection conn, String serviceCode) {
+    public ServiceConfigRepository(String dataSourceName) {
+		super(dataSourceName);
+	}
+
+	public ServiceConfig loadFromDb(String serviceCode) {
+		
+		Connection conn = null;
+		
 		try {
+			conn = getConnection();
+			
             try (PreparedStatement ps = conn.prepareStatement(SQL)) {
 
                 ps.setString(1, serviceCode);
@@ -40,6 +50,8 @@ public class ServiceConfigRepository {
                 "Load ServiceConfig failed, serviceCode=" + serviceCode, e
             );
             return null;
-        }
+        } finally {
+        	try { if (conn != null) conn.close(); } catch (Exception e) {}
+		}
 	}
 }

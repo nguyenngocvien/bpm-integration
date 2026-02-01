@@ -5,11 +5,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import com.idd.shared.entity.SiLog;
+import com.idd.shared.sqlconnector.SQLConnector;
 import com.idd.shared.util.BpmLogger;
 
-public class LogRepository {
+public class LogRepository extends SQLConnector{
 
-    private static final String SEQ_SQL =
+	private static final String SEQ_SQL =
         "SELECT SI_LOG_ID_SEQ.NEXTVAL FROM dual";
 
     private static final String INSERT_SQL =
@@ -18,10 +19,18 @@ public class LogRepository {
         "ERROR_CODE, ERROR_MESSAGE, STACKTRACE, LOG_CODE, CASE_ID, TIMING, SYSTEM, CREATED_DATE" +
         ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
 
-    public static Long writeLog(Connection conn, SiLog log) {
+    public LogRepository(String dataSourceName) {
+		super(dataSourceName);
+	}
+    
+    public Long writeLog(SiLog log) {
 
+    	Connection conn = null;
+        
     	Long logId;
 		try {
+			conn = getConnection();
+			
 			logId = nextId(conn);
 			
 			try (PreparedStatement ps = conn.prepareStatement(INSERT_SQL)) {
@@ -50,6 +59,8 @@ public class LogRepository {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			try { if (conn != null) conn.close(); } catch (Exception e) {}
 		}
         
         return null;

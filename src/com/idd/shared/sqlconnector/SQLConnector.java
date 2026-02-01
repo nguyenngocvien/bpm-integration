@@ -1,4 +1,4 @@
-package com.idd.sql.service;
+package com.idd.shared.sqlconnector;
 
 import java.sql.Connection;
 import java.sql.SQLException;
