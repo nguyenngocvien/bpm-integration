@@ -3,9 +3,11 @@ package com.idd.gendoc.service;
 import java.sql.SQLException;
 
 import com.idd.gendoc.entiry.GenDocRequest;
+import com.idd.shared.entity.Response;
+import com.idd.shared.util.JsonHelper;
 
 public class GenerateDocumentService {
-	public Object generate(
+	public String generate(
             String dataSourceName,
             String serviceCode,
             String caseId, 
@@ -25,7 +27,9 @@ public class GenerateDocumentService {
     	request.setECMDocumentClass("LOS");
     	request.setECMFolderPath("/ExportFile");
 		
-        return new GendocInvoker(dataSourceName)
+    	Response r = new GendocInvoker(dataSourceName)
                 .execute(serviceCode, caseId, request);
+    	
+    	return JsonHelper.stringify(r);
     }
 }

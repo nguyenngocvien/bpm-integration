@@ -35,7 +35,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 		this.serviceConfigCache = new ServiceConfigCache(dataSourceName);
 	}
 	
-	public Object execute(String serviceCode, String input, String traceId) {
+	public Response execute(String serviceCode, String input, String traceId) {
 		
 		Connection conn = null;
         CallableStatement cstmt = null;
