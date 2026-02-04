@@ -1,6 +1,5 @@
-package com.idd.config.repository;
+package com.idd.module.mail;
 
-import com.idd.module.mail.EmailTemplate;
 import com.idd.module.sql.SQLConnector;
 import com.idd.shared.util.BpmLogger;
 

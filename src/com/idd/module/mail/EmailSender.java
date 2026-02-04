@@ -11,7 +11,6 @@ import com.idd.config.entity.ERROR_CODE;
 import com.idd.config.entity.LogRecord;
 import com.idd.config.entity.Response;
 import com.idd.config.entity.ServiceConfig;
-import com.idd.config.repository.EmailTemplateRepository;
 import com.idd.module.sql.SQLConnector;
 import com.idd.shared.crypto.CryptoService;
 import com.idd.shared.util.JsonHelper;

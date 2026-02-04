@@ -1,4 +1,4 @@
-package com.idd.main.service;
+package com.idd.service;
 
 import java.sql.SQLException;
 

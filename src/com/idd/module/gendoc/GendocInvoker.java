@@ -5,7 +5,7 @@ import java.util.Base64;
 import com.idd.config.cache.ServiceConfigCache;
 import com.idd.config.entity.ERROR_CODE;
 import com.idd.config.entity.LogRecord;
-import com.idd.config.entity.RESTConfig;
+import com.idd.config.entity.RestApiConfig;
 import com.idd.config.entity.Response;
 import com.idd.config.entity.ServiceConfig;
 import com.idd.module.sql.SQLConnector;
@@ -50,7 +50,7 @@ public class GendocInvoker extends SQLConnector {
 						);
 			}
 			
-			RESTConfig apiConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), RESTConfig.class);
+			RestApiConfig apiConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), RestApiConfig.class);
 			if (apiConfig == null) {
 				throw new IllegalStateException(
 						String.format(

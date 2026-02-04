@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-public class RESTConfig {
+public class RestApiConfig {
     private String url;
     private String method;
     private Integer timeout;
