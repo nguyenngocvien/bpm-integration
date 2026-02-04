@@ -1,39 +1,47 @@
-package com.idd.module.gendoc;
-
-import com.idd.entity.RESTConfig;
+package com.idd.module.odm;
 
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.idd.entity.ERROR_CODE;
 import com.idd.entity.LogRecord;
+import com.idd.entity.RESTConfig;
 import com.idd.entity.Response;
 import com.idd.entity.ServiceConfig;
 import com.idd.module.sql.SQLConnector;
 import com.idd.util.BasicAuthRestClient;
 import com.idd.util.CryptoService;
+import com.idd.util.DateTimeUtil;
 import com.idd.util.JsonHelper;
 import com.idd.util.LogHelper;
 import com.idd.util.ServiceConfigCache;
 
-public class GendocInvoker extends SQLConnector {
-
-	private final static String SYSTEM = "GENDOC";
+public class ODMInvoker extends SQLConnector{
+	
+	private final static String SYSTEM = "ODM";
 	private final LogHelper logHelper;
 	private final ServiceConfigCache serviceConfigCache;
 	private final CryptoService cryptoService;
 	
-	public GendocInvoker(String dataSourceName, String secretKey) {
+	public ODMInvoker(String dataSourceName, String secretKey) {
 		super(dataSourceName);
 		this.logHelper = new LogHelper(dataSourceName);
 		this.serviceConfigCache = new ServiceConfigCache(dataSourceName);
 		this.cryptoService = new CryptoService(Base64.getDecoder().decode(secretKey));
 	}
 
-	public Response execute(String serviceName, String version, String caseId, GenDocRequest request) {
+	public Response execute(String serviceName, String version, String caseId, String input) {
+		Map<String, Object> fromInput = new HashMap<>();
+		fromInput.put("serviceName", serviceName);
+		fromInput.put("version", version);
+		fromInput.put("caseId", caseId);
+		fromInput.put("input", input);
+		
 		LogRecord log = LogRecord.init(
 			caseId,
-            request.getTemplateFileName(),
-            JsonHelper.stringify(request),
+			serviceName,
+            JsonHelper.stringify(fromInput),
             SYSTEM
         );
 		
@@ -63,21 +71,27 @@ public class GendocInvoker extends SQLConnector {
 			}
 			apiConfig.setPassword(cryptoService.decrypt(apiConfig.getPassword()));
 			
-			String body = JsonHelper.stringify(request);
+			DecisionRequest decisionRequest = new DecisionRequest();
+	        decisionRequest.setDecisionId(DateTimeUtil.generateUUID());
+	        decisionRequest.setInput(input);
+	        
+			String body = JsonHelper.stringify(decisionRequest);
 			log.setToInput(body);
 			
 			BasicAuthRestClient client = new BasicAuthRestClient(apiConfig.getUsername(), apiConfig.getPassword());
 			String result = client.execute(apiConfig.getUrl(), apiConfig.getMethod(), apiConfig.getTimeout(), body);
-			log.setFromOutput(result);
+			log.setToOutput(result);
 			
-			GenDocResponse docResponse = JsonHelper.parseObject(result, GenDocResponse.class);
+			DecisionResponse decisionResponse = JsonHelper.parseObject(result, DecisionResponse.class);
+			log.setFromOutput(decisionResponse.getOutput());
+			
 			Long logId = logHelper.saveSuccess(
                 log,
                 serviceConfig.isLogEnabled(),
-                JsonHelper.stringify(result)
+                decisionResponse.getOutput()
             );
-			
-			response = Response.success(docResponse, logId);
+
+			response = Response.success(decisionResponse.getOutput(), logId);
 			
 		} catch (Exception e) {
 			Long logId = logHelper.saveError(

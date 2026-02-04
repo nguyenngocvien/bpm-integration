@@ -32,6 +32,16 @@ public class Response {
     	return r;
 	}
     
+    public static Response success(Object data, Long logId) {
+    	Response r = new Response();
+    	r.code = ERROR_CODE.SUCCESS.getCode();
+    	r.message = ERROR_CODE.SUCCESS.getDefaultMessage();
+    	r.data = data;
+    	r.logId = logId.toString();
+    	
+    	return r;
+	}
+    
     public static Response error(String code, String message) {
     	Response r = new Response();
     	r.code = code;
