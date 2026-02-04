@@ -9,12 +9,13 @@ import com.idd.util.JsonHelper;
 public class SQLService {
     public String callStoreProcedure(
             String dataSourceName,
-            String procedureName,
+            String serviceName,
+            String version,
             String input,
             String caseId
     ) throws SQLException {
     	Response result = new SQLCallStoreProcedure(dataSourceName)
-                .execute(procedureName, input, caseId);
+                .execute(serviceName, version, input, caseId);
     	
     	return JsonHelper.stringify(result);
     }

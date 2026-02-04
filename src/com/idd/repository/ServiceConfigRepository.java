@@ -10,13 +10,13 @@ import com.idd.util.BpmLogger;
 
 public class ServiceConfigRepository extends SQLConnector {
 
-	private static final String SQL = "SELECT * FROM SI_VERSION WHERE SERVICE_NAME = ? AND STATUS = '1' ORDER BY SERVICE_VERSION DESC FETCH FIRST 1 ROWS ONLY";
+	private static final String SQL = "SELECT * FROM SI_VERSION WHERE SERVICE_NAME = ? AND SI_VERSION = ? AND STATUS = '1' ORDER BY SERVICE_VERSION DESC FETCH FIRST 1 ROWS ONLY";
 
     public ServiceConfigRepository(String dataSourceName) {
 		super(dataSourceName);
 	}
 
-	public ServiceConfig loadFromDb(String serviceCode) {
+	public ServiceConfig loadFromDb(String serviceCode, String siVersion) {
 		
 		Connection conn = null;
 		
@@ -26,6 +26,7 @@ public class ServiceConfigRepository extends SQLConnector {
             try (PreparedStatement ps = conn.prepareStatement(SQL)) {
 
                 ps.setString(1, serviceCode);
+                ps.setString(2, siVersion);
 
                 try (ResultSet rs = ps.executeQuery()) {
 

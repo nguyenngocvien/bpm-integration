@@ -1,67 +1,106 @@
 package com.idd.module.gendoc;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class GenDocRequest {
-    private String TemplateFileName;
-    private String OutputFileName;
+	
+	@JsonProperty("TemplateFileName")
+    private String templateFileName;
+	
+    @JsonProperty("OutputFileName")
+    private String outputFileName;
+    
+    @JsonProperty("QRCodeEncodesString")
     private String QRCodeEncodesString;
-    private String InputType;
-    private String InputData;
-    private String ECMRepository;
-    private String ECMProperties;
-    private String ECMDocumentClass;
-    private String ECMFolderPath;
+    
+    @JsonProperty("InputType")
+    private String inputType;
+    
+    @JsonProperty("InputData")
+    private String inputData;
+    
+    @JsonProperty("ECMRepository")
+    private String ecmRepo;
+    
+    @JsonProperty("ECMProperties")
+    private String ecmProps;
+    
+    @JsonProperty("ECMDocumentClass")
+    private String ecmDocClass;
+    
+    @JsonProperty("ECMFolderPath")
+    private String ecmFolderPath;
+
 	public String getTemplateFileName() {
-		return TemplateFileName;
+		return templateFileName;
 	}
+
 	public void setTemplateFileName(String templateFileName) {
-		TemplateFileName = templateFileName;
+		this.templateFileName = templateFileName;
 	}
+
 	public String getOutputFileName() {
-		return OutputFileName;
+		return outputFileName;
 	}
+
 	public void setOutputFileName(String outputFileName) {
-		OutputFileName = outputFileName;
+		this.outputFileName = outputFileName;
 	}
+
 	public String getQRCodeEncodesString() {
 		return QRCodeEncodesString;
 	}
+
 	public void setQRCodeEncodesString(String qRCodeEncodesString) {
 		QRCodeEncodesString = qRCodeEncodesString;
 	}
+
 	public String getInputType() {
-		return InputType;
+		return inputType;
 	}
+
 	public void setInputType(String inputType) {
-		InputType = inputType;
+		this.inputType = inputType;
 	}
+
 	public String getInputData() {
-		return InputData;
+		return inputData;
 	}
+
 	public void setInputData(String inputData) {
-		InputData = inputData;
+		this.inputData = inputData;
 	}
-	public String getECMRepository() {
-		return ECMRepository;
+
+	public String getEcmRepo() {
+		return ecmRepo;
 	}
-	public void setECMRepository(String eCMRepository) {
-		ECMRepository = eCMRepository;
+
+	public void setEcmRepo(String ecmRepo) {
+		this.ecmRepo = ecmRepo;
 	}
-	public String getECMProperties() {
-		return ECMProperties;
+
+	public String getEcmProps() {
+		return ecmProps;
 	}
-	public void setECMProperties(String eCMProperties) {
-		ECMProperties = eCMProperties;
+
+	public void setEcmProps(String ecmProps) {
+		this.ecmProps = ecmProps;
 	}
-	public String getECMDocumentClass() {
-		return ECMDocumentClass;
+
+	public String getEcmDocClass() {
+		return ecmDocClass;
 	}
-	public void setECMDocumentClass(String eCMDocumentClass) {
-		ECMDocumentClass = eCMDocumentClass;
+
+	public void setEcmDocClass(String ecmDocClass) {
+		this.ecmDocClass = ecmDocClass;
 	}
-	public String getECMFolderPath() {
-		return ECMFolderPath;
+
+	public String getEcmFolderPath() {
+		return ecmFolderPath;
 	}
-	public void setECMFolderPath(String eCMFolderPath) {
-		ECMFolderPath = eCMFolderPath;
+
+	public void setEcmFolderPath(String ecmFolderPath) {
+		this.ecmFolderPath = ecmFolderPath;
 	}
+    
 }

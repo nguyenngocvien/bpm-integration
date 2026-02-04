@@ -35,7 +35,7 @@ public class ServiceConfigCache {
     	this.configRepository = new ServiceConfigRepository(dataSourcename);
     }
 
-    public ServiceConfig get(String serviceCode) {
+    public ServiceConfig get(String serviceCode, String siVersion) {
         CachedConfig cached = CACHE.get(serviceCode);
 
         if (cached != null && !cached.isExpired(TTL_MS)) {
@@ -48,7 +48,7 @@ public class ServiceConfigCache {
                 return cached.config;
             }
 
-            ServiceConfig fresh = configRepository.loadFromDb(serviceCode);
+            ServiceConfig fresh = configRepository.loadFromDb(serviceCode, siVersion);
 
             if (fresh != null) {
                 CACHE.put(serviceCode, new CachedConfig(fresh));

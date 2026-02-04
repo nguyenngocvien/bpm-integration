@@ -6,98 +6,82 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
-import com.idd.entity.RESTConfig;
+public abstract class RestClient {
 
-public class RestClient {
+    protected static final int DEFAULT_TIMEOUT = 10000;
 
-	public String execute(RESTConfig config, String input) throws Exception {
-		if (config.isBasic()) {
-			return execute(config.getUrl(), config.getMethod(), config.getUsername(), config.getPassword(), input);
-		}
-		
-		return execute(config.getUrl(), config.getMethod(), input);
-	}
+    public String execute(String endpoint, String method, int timeout, String body) throws Exception {
+        HttpURLConnection conn = openConnection(endpoint, method, timeout);
+        applyAuth(conn);
+        applyHeaders(conn);
 
-	public String execute(String endpoint, String method, String body) throws Exception {
-		URL url = new URL(endpoint);
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		conn.setRequestMethod(method);
-		conn.setRequestProperty("Accept", "application/json");
-		
-		if (method == "POST") {
-			conn.setRequestProperty("Content-Type", "application/json; utf-8");
-			conn.setDoOutput(true);
-			
-			try (OutputStream os = conn.getOutputStream()) {
-	            byte[] input = body.getBytes(StandardCharsets.UTF_8);
-	            os.write(input, 0, input.length);
-	        }
-		}
-		
-		return getResponse(conn);
-	}
-	
-	public String execute(String endpoint, String method, String user, String pass, String body) throws Exception {
-		URL url = new URL(endpoint);
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		conn.setRequestMethod(method);
-		
-		String auth = user + ":" + pass;
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-        
-        conn.setRequestProperty("Authorization", "Basic " + encodedAuth);
-		conn.setRequestProperty("Accept", "application/json");
-		
-		if (method == "POST") {
-			conn.setRequestProperty("Content-Type", "application/json; utf-8");
-			conn.setDoOutput(true);
-			
-			try (OutputStream os = conn.getOutputStream()) {
-	            byte[] input = body.getBytes(StandardCharsets.UTF_8);
-	            os.write(input, 0, input.length);
-	        }
-		}
-		
-		return getResponse(conn);
-	}
-	
-	public String execute(String endpoint, String method, String bearerToken, String body) throws Exception {
-		URL url = new URL(endpoint);
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		conn.setRequestMethod(method);
-		conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
-		conn.setRequestProperty("Accept", "application/json");
-		
-		if (method == "POST") {
-			conn.setRequestProperty("Content-Type", "application/json; utf-8");
-			conn.setDoOutput(true);
-			
-			try (OutputStream os = conn.getOutputStream()) {
-	            byte[] input = body.getBytes(StandardCharsets.UTF_8);
-	            os.write(input, 0, input.length);
-	        }
-		}
-		
-		return getResponse(conn);
-	}
-	
-	private String getResponse(HttpURLConnection conn) throws Exception {
-        int responseCode = conn.getResponseCode();
-        
-        if (responseCode >= 200 && responseCode <= 299) {
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                return response.toString();
-            }
-        } else {
-            throw new RuntimeException("HTTP Error: " + responseCode);
+        if (hasRequestBody(method)) {
+            writeBody(conn, body);
         }
+
+        return getResponse(conn);
+    }
+
+    protected HttpURLConnection openConnection(String endpoint, String method, int timeout) throws Exception {
+        URL url = new URL(endpoint);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        int effectiveTimeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT;
+        conn.setConnectTimeout(effectiveTimeout);
+        conn.setReadTimeout(effectiveTimeout);
+        conn.setRequestMethod(method);
+
+        return conn;
+    }
+
+    protected boolean hasRequestBody(String method) {
+        return "POST".equalsIgnoreCase(method)
+            || "PUT".equalsIgnoreCase(method)
+            || "PATCH".equalsIgnoreCase(method);
+    }
+
+    protected void writeBody(HttpURLConnection conn, String body) throws Exception {
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+
+        byte[] input = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+        conn.setRequestProperty("Content-Length", String.valueOf(input.length));
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(input);
+        }
+    }
+
+    protected void applyHeaders(HttpURLConnection conn) {
+        conn.setRequestProperty("Accept", "application/json");
+    }
+
+    /**
+     * - none
+     * - basic
+     * - bearer
+     * - custom
+     */
+    protected abstract void applyAuth(HttpURLConnection conn) throws Exception;
+
+    protected String getResponse(HttpURLConnection conn) throws Exception {
+        int responseCode = conn.getResponseCode();
+
+        BufferedReader br = responseCode >= 200 && responseCode <= 299
+                ? new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))
+                : new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            response.append(line);
+        }
+
+        if (responseCode >= 200 && responseCode <= 299) {
+            return response.toString();
+        }
+
+        throw new RuntimeException("HTTP Error " + responseCode + ": " + response);
     }
 }

@@ -33,14 +33,14 @@ public class SQLCallStoreProcedure extends SQLConnector {
 		this.serviceConfigCache = new ServiceConfigCache(dataSourceName);
 	}
 	
-	public Response execute(String serviceCode, String input, String traceId) {
+	public Response execute(String serviceName, String version, String input, String traceId) {
 		
 		Connection conn = null;
         CallableStatement cstmt = null;
         
         LogRecord log = LogRecord.init(
 			traceId,
-            serviceCode,
+			serviceName,
             input,
             SYSTEM
         );
@@ -49,8 +49,26 @@ public class SQLCallStoreProcedure extends SQLConnector {
 			conn = getConnection();
 			
 			try {
-				ServiceConfig serviceConfig = serviceConfigCache.get(serviceCode);				
+				ServiceConfig serviceConfig = serviceConfigCache.get(serviceName, version);
+				if (serviceConfig == null) {
+					throw new IllegalStateException(
+							String.format(
+					                "Service config not found for serviceName=%s, version=%s",
+					                serviceName,
+					                version
+					            )
+							);
+				}
 				SQLConfig sqlConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), SQLConfig.class);
+				if (sqlConfig == null) {
+					throw new IllegalStateException(
+							String.format(
+					                "Detail of service config is invalid for serviceName=%s, version=%s",
+					                serviceName,
+					                version
+					            )
+							);
+				}
 		    	log.setService(sqlConfig.getPackageName() + "." + sqlConfig.getProcedureName());
 		    	
 		    	String sql = SQLHelper.buildCallSql(sqlConfig);

@@ -29,7 +29,6 @@ public final class CryptoService {
     }
     
     public CryptoService(String secretKey) {
-        
     	if (secretKey == null || secretKey.isEmpty()) {
             throw new IllegalStateException(
                 "Missing AES key"
