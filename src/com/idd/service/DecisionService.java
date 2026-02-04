@@ -3,10 +3,10 @@ package com.idd.service;
 import java.sql.SQLException;
 
 import com.idd.entity.Response;
-import com.idd.module.odm.ODMInvoker;
+import com.idd.module.odm.DecisionInvoker;
 import com.idd.util.JsonHelper;
 
-public class ODMService {
+public class DecisionService {
 	
 	public String execute(
             String dataSourceName,
@@ -21,7 +21,7 @@ public class ODMService {
 		
 		String serviceName = ruleAppName + "." + ruleSetName;
 		
-    	Response r = new ODMInvoker(dataSourceName, aesKey)
+    	Response r = new DecisionInvoker(dataSourceName, aesKey)
                 .execute(serviceName, version, caseId, inputData);
     	
     	return JsonHelper.stringify(r);

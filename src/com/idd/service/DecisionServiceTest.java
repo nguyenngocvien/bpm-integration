@@ -2,7 +2,7 @@ package com.idd.service;
 
 import java.sql.SQLException;
 
-public class ODMServiceTest {
+public class DecisionServiceTest {
 	
 	public static void main(String[] args) throws SQLException {
 
@@ -17,7 +17,7 @@ public class ODMServiceTest {
 
 	private static String callRule() throws SQLException {
 		
-		return new ODMService()
+		return new DecisionService()
 					.execute(
 						"dataSourceTest",
 						"SAALEM_EXIM_POS",

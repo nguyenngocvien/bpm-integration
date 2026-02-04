@@ -17,14 +17,14 @@ import com.idd.util.JsonHelper;
 import com.idd.util.LogHelper;
 import com.idd.util.ServiceConfigCache;
 
-public class ODMInvoker extends SQLConnector{
+public class DecisionInvoker extends SQLConnector{
 	
 	private final static String SYSTEM = "ODM";
 	private final LogHelper logHelper;
 	private final ServiceConfigCache serviceConfigCache;
 	private final CryptoService cryptoService;
 	
-	public ODMInvoker(String dataSourceName, String secretKey) {
+	public DecisionInvoker(String dataSourceName, String secretKey) {
 		super(dataSourceName);
 		this.logHelper = new LogHelper(dataSourceName);
 		this.serviceConfigCache = new ServiceConfigCache(dataSourceName);
