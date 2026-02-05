@@ -1,8 +1,9 @@
-package com.idd.util;
+package com.idd.shared.util;
 
 import java.util.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public final class JsonHelper {
@@ -54,6 +55,20 @@ public final class JsonHelper {
             return MAPPER.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Cannot stringify object to JSON", e);
+        }
+    }
+    
+    public static String normalizeJson(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return raw;
+        }
+
+        try {
+            JsonNode node = MAPPER.readTree(raw);
+            return MAPPER.writeValueAsString(node);
+        } catch (Exception e) {
+            // Not a valid JSON → return original
+            return raw;
         }
     }
 }

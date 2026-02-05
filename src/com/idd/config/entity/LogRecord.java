@@ -1,4 +1,4 @@
-package com.idd.entity;
+package com.idd.config.entity;
 
 import java.util.Date;
 import java.util.UUID;

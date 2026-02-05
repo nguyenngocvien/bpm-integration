@@ -1,4 +1,4 @@
-package com.idd.util;
+package com.idd.shared.restclient;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -6,15 +6,34 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
-public abstract class RestClient {
+public class SoapClient {
 
-    protected static final int DEFAULT_TIMEOUT = 10000;
+    private static final int DEFAULT_TIMEOUT = 10000;
 
-    public String execute(String endpoint, String method, int timeout, String body) throws Exception {
+    public String execute(String endpoint, String method, int timeout, List<Map<String, String>> headers, String body) throws Exception {
         HttpURLConnection conn = openConnection(endpoint, method, timeout);
-        applyAuth(conn);
-        applyHeaders(conn);
+
+
+        if (headers != null && !headers.isEmpty()) {
+        	for (Map<String, String> header : headers) {
+                if (header == null || header.isEmpty()) {
+                    continue;
+                }
+                for (Map.Entry<String, String> entry : header.entrySet()) {
+                    String name = entry.getKey();
+                    String value = entry.getValue();
+
+                    if (name == null || value == null) {
+                        continue;
+                    }
+
+                    conn.setRequestProperty(name, value);
+                }
+            }	
+        }
 
         if (hasRequestBody(method)) {
             writeBody(conn, body);
@@ -22,8 +41,8 @@ public abstract class RestClient {
 
         return getResponse(conn);
     }
-
-    protected HttpURLConnection openConnection(String endpoint, String method, int timeout) throws Exception {
+    
+    public HttpURLConnection openConnection(String endpoint, String method, int timeout) throws Exception {
         URL url = new URL(endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -35,37 +54,24 @@ public abstract class RestClient {
         return conn;
     }
 
-    protected boolean hasRequestBody(String method) {
+    private boolean hasRequestBody(String method) {
         return "POST".equalsIgnoreCase(method)
             || "PUT".equalsIgnoreCase(method)
             || "PATCH".equalsIgnoreCase(method);
     }
 
-    protected void writeBody(HttpURLConnection conn, String body) throws Exception {
+    private void writeBody(HttpURLConnection conn, String body) throws Exception {
         conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        conn.setRequestProperty("Content-Type", "text/xml; charset=UTF-8");
 
         byte[] input = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
-        conn.setRequestProperty("Content-Length", String.valueOf(input.length));
 
         try (OutputStream os = conn.getOutputStream()) {
             os.write(input);
         }
     }
 
-    protected void applyHeaders(HttpURLConnection conn) {
-        conn.setRequestProperty("Accept", "application/json");
-    }
-
-    /**
-     * - none
-     * - basic
-     * - bearer
-     * - custom
-     */
-    protected abstract void applyAuth(HttpURLConnection conn) throws Exception;
-
-    protected String getResponse(HttpURLConnection conn) throws Exception {
+    private String getResponse(HttpURLConnection conn) throws Exception {
         int responseCode = conn.getResponseCode();
 
         BufferedReader br = responseCode >= 200 && responseCode <= 299
@@ -75,7 +81,7 @@ public abstract class RestClient {
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = br.readLine()) != null) {
-            response.append(line);
+            response.append(line).append("\n");
         }
 
         if (responseCode >= 200 && responseCode <= 299) {

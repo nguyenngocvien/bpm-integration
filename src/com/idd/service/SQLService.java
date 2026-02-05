@@ -2,9 +2,9 @@ package com.idd.service;
 
 import java.sql.SQLException;
 
-import com.idd.entity.Response;
+import com.idd.config.entity.Response;
 import com.idd.module.sql.SQLCallStoreProcedure;
-import com.idd.util.JsonHelper;
+import com.idd.shared.util.JsonHelper;
 
 public class SQLService {
     public String callStoreProcedure(

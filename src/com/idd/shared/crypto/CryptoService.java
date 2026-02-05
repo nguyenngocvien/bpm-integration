@@ -1,4 +1,4 @@
-package com.idd.util;
+package com.idd.shared.crypto;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;

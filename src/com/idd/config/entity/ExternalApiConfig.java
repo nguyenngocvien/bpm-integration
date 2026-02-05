@@ -1,11 +1,15 @@
-package com.idd.entity;
+package com.idd.config.entity;
+
+import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-public class RESTConfig {
+public class ExternalApiConfig {
+	private String apiType;
     private String url;
     private String method;
     private Integer timeout;
@@ -19,10 +23,34 @@ public class RESTConfig {
     private String oauth2ClientSecret;
     private String oauth2TokenUrl;
     
+    private List<Map<String, String>> headers;
+	
+    private String requestTemplate;
+    
+    public boolean isRest() {
+        return "REST".equalsIgnoreCase(apiType);
+    }
+    
+    public boolean isSoap() {
+        return "SOAP".equalsIgnoreCase(apiType);
+    }
+    
     public boolean isBasic() {
         return "BASIC".equalsIgnoreCase(authType);
     }
     
+    public boolean isToken() {
+        return "TOKEN".equalsIgnoreCase(authType);
+    }
+    
+	public String getApiType() {
+		return apiType;
+	}
+
+	public void setApiType(String apiType) {
+		this.apiType = apiType;
+	}
+
 	public String getUrl() {
 		return url;
 	}
@@ -94,5 +122,21 @@ public class RESTConfig {
 	}
 	public void setOauth2TokenUrl(String oauth2TokenUrl) {
 		this.oauth2TokenUrl = oauth2TokenUrl;
+	}
+
+	public List<Map<String, String>> getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(List<Map<String, String>> headers) {
+		this.headers = headers;
+	}
+
+	public String getRequestTemplate() {
+		return requestTemplate;
+	}
+
+	public void setRequestTemplate(String requestTemplate) {
+		this.requestTemplate = requestTemplate;
 	}
 }

@@ -1,10 +1,10 @@
-package com.idd.util;
+package com.idd.config.cache;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.idd.entity.ServiceConfig;
-import com.idd.repository.ServiceConfigRepository;
+import com.idd.config.entity.ServiceConfig;
+import com.idd.config.repository.ServiceConfigRepository;
 
 public class ServiceConfigCache {
 	

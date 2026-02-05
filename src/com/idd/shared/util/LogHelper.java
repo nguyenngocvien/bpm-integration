@@ -1,8 +1,8 @@
-package com.idd.util;
+package com.idd.shared.util;
 
-import com.idd.entity.ERROR_CODE;
-import com.idd.entity.LogRecord;
-import com.idd.repository.LogRepository;
+import com.idd.config.entity.ERROR_CODE;
+import com.idd.config.entity.LogRecord;
+import com.idd.config.repository.LogRepository;
 
 public class LogHelper {
 	

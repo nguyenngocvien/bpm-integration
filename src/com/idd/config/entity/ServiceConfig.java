@@ -1,4 +1,4 @@
-package com.idd.entity;
+package com.idd.config.entity;
 
 public class ServiceConfig {
     private String appName;

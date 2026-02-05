@@ -1,4 +1,4 @@
-package com.idd.entity;
+package com.idd.config.entity;
 
 public enum ERROR_CODE {
 	SUCCESS("00", "Success"),

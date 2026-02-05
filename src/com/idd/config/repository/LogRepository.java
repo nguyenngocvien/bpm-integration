@@ -1,12 +1,12 @@
-package com.idd.repository;
+package com.idd.config.repository;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import com.idd.entity.LogRecord;
+import com.idd.config.entity.LogRecord;
 import com.idd.module.sql.SQLConnector;
-import com.idd.util.BpmLogger;
+import com.idd.shared.util.BpmLogger;
 
 public class LogRepository extends SQLConnector{
 

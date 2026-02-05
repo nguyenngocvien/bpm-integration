@@ -1,4 +1,4 @@
-package com.idd.util;
+package com.idd.shared.restclient;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -7,13 +7,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-public abstract class SoapClient {
+public abstract class RestClient {
 
     protected static final int DEFAULT_TIMEOUT = 10000;
 
     public String execute(String endpoint, String method, int timeout, String body) throws Exception {
         HttpURLConnection conn = openConnection(endpoint, method, timeout);
         applyAuth(conn);
+        applyHeaders(conn);
 
         if (hasRequestBody(method)) {
             writeBody(conn, body);
@@ -42,13 +43,18 @@ public abstract class SoapClient {
 
     protected void writeBody(HttpURLConnection conn, String body) throws Exception {
         conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "text/xml; charset=UTF-8");
+        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
 
         byte[] input = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+        conn.setRequestProperty("Content-Length", String.valueOf(input.length));
 
         try (OutputStream os = conn.getOutputStream()) {
             os.write(input);
         }
+    }
+
+    protected void applyHeaders(HttpURLConnection conn) {
+        conn.setRequestProperty("Accept", "application/json");
     }
 
     /**
@@ -69,7 +75,7 @@ public abstract class SoapClient {
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = br.readLine()) != null) {
-            response.append(line).append("\n");
+            response.append(line);
         }
 
         if (responseCode >= 200 && responseCode <= 299) {

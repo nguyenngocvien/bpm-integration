@@ -10,7 +10,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import com.idd.util.BpmLogger;
+import com.idd.shared.util.BpmLogger;
 
 import oracle.jdbc.pool.OracleDataSource;
 

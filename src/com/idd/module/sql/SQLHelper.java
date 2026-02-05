@@ -1,12 +1,11 @@
-package com.idd.util;
+package com.idd.module.sql;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.idd.module.sql.SQLConfig;
-import com.idd.module.sql.SQLParam;
+import com.idd.shared.util.JsonHelper;
 
 public class SQLHelper {
 	public static String buildCallSql(SQLConfig config) {

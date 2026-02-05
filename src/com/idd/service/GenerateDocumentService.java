@@ -2,10 +2,10 @@ package com.idd.service;
 
 import java.sql.SQLException;
 
-import com.idd.entity.Response;
+import com.idd.config.entity.Response;
 import com.idd.module.gendoc.GenDocRequest;
 import com.idd.module.gendoc.GendocInvoker;
-import com.idd.util.JsonHelper;
+import com.idd.shared.util.JsonHelper;
 
 public class GenerateDocumentService {
 	public String generate(

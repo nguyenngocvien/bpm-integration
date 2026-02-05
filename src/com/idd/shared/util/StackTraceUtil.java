@@ -1,4 +1,4 @@
-package com.idd.util;
+package com.idd.shared.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

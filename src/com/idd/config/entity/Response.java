@@ -1,4 +1,4 @@
-package com.idd.entity;
+package com.idd.config.entity;
 
 import java.util.Map;
 
@@ -10,6 +10,15 @@ public class Response {
     
     public Response() {
 		// TODO Auto-generated constructor stub
+	}
+    
+    public static Response success(Long logId) {
+    	Response r = new Response();
+    	r.code = ERROR_CODE.SUCCESS.getCode();
+    	r.message = ERROR_CODE.SUCCESS.getDefaultMessage();
+    	r.logId = logId.toString();
+    	
+    	return r;
 	}
     
     public static Response success(Map<String, Object> data, Long logId) {

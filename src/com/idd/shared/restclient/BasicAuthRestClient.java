@@ -1,4 +1,4 @@
-package com.idd.util;
+package com.idd.shared.restclient;
 
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
