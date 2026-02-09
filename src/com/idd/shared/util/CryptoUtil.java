@@ -11,4 +11,8 @@ public final class CryptoUtil {
 	public static String decrypt(String secretKey, String plainText) {
 		return new CryptoService(secretKey).decrypt(plainText);
 	}
+	
+//	public static void main(String[] args) {
+//		System.out.println(encrypt("tYtPIDwQBTuevzK8NhOXQw==", "los@13579"));
+//	}
 }
