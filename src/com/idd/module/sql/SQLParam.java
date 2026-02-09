@@ -11,7 +11,7 @@ public class SQLParam {
 	private Integer paramIndex;
 	
     private String name;
-    private int sqlType;
+    private String sqlType;
     private SQLParamMode mode;
     private Object value;
 
@@ -25,7 +25,7 @@ public class SQLParam {
     public SQLParam(
     	@JsonProperty("paramIndex") Integer paramIndex,
         @JsonProperty("name") String name,
-        @JsonProperty("sqlType") int sqlType,
+        @JsonProperty("sqlType") String sqlType,
         @JsonProperty("mode") SQLParamMode mode,
         @JsonProperty("value") Object value,
         @JsonProperty("inputMapping") String inputMapping,
@@ -53,7 +53,7 @@ public class SQLParam {
 
     public Integer getParamIndex() { return paramIndex; }
     public String getName() { return name; }
-    public int getSqlType() { return sqlType; }
+    public String getSqlType() { return sqlType; }
     public SQLParamMode getMode() { return mode; }
     public Object getValue() { return value; }
     public String getInputMapping() { return inputMapping; }

@@ -151,17 +151,26 @@ public class SQLCallStoreProcedure extends SQLConnector {
 	            throw new IllegalArgumentException("SQLParam is null");
 	        }
 	    	
-	    	if (param.isIn()) {
-	    		
+	    	if (param.isIn()) {	    		
 		        if (param.getValue() == null) {
-		            cstmt.setNull(param.getParamIndex(), param.getSqlType());
+		            cstmt.setNull(
+		            		param.getParamIndex(), 
+		            		SqlTypeUtils.toJdbcType(param.getSqlType())
+		            );
 		        } else {
-		            cstmt.setObject(param.getParamIndex(), param.getValue(), param.getSqlType());
+		            cstmt.setObject(
+		            		param.getParamIndex(), 
+		            		param.getValue(), 
+		            		SqlTypeUtils.toJdbcType(param.getSqlType())
+		            );
 		        }
 			}
 	    	
 	    	if (param.isOut()) {
-				cstmt.registerOutParameter(param.getParamIndex(), param.getSqlType());
+				cstmt.registerOutParameter(
+						param.getParamIndex(), 
+						SqlTypeUtils.toJdbcType(param.getSqlType())
+				);
 			}
 	    }
 	}
