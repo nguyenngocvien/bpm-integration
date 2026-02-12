@@ -26,7 +26,6 @@ public class GenerateDocumentService {
 		request.setTemplateFileName(templateFileName);
 		request.setOutputFileName(outputFileName);
 		request.setInputData(inputData);
-		
     	request.setInputType(inputType != null && !inputType.isEmpty() ? inputType : "json");
     	request.setEcmRepo(ecmRepo != null && !ecmRepo.isEmpty() ? ecmRepo : "OBJ");
     	request.setEcmProps(ecmProps != null && !ecmProps.isEmpty() ? ecmProps : "");
