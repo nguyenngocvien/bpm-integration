@@ -30,7 +30,7 @@ public class GendocInvoker extends SQLConnector {
 		this.cryptoService = new CryptoService(Base64.getDecoder().decode(secretKey));
 	}
 
-	public Response execute(String serviceName, String version, String caseId, GenDocRequest request) {
+	public Response execute(String serviceName, String version, GenDocRequest request, String caseId) {
 		Map<String, Object> fromInput = new HashMap<>();
 		fromInput.put("serviceName", serviceName);
 		fromInput.put("version", version);

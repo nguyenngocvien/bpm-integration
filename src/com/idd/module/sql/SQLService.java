@@ -1,18 +1,17 @@
-package com.idd.service;
+package com.idd.module.sql;
 
 import java.sql.SQLException;
 
 import com.idd.config.entity.Response;
-import com.idd.module.sql.SQLCallStoreProcedure;
 import com.idd.shared.util.JsonHelper;
 
 public class SQLService {
     public String callStoreProcedure(
-            String dataSourceName,
             String serviceName,
             String version,
             String input,
-            String caseId
+            String caseId,
+            String dataSourceName
     ) throws SQLException {
     	Response result = new SQLCallStoreProcedure(dataSourceName)
                 .execute(serviceName, version, input, caseId);

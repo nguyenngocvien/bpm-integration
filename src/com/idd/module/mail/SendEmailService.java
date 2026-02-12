@@ -1,9 +1,8 @@
-package com.idd.service;
+package com.idd.module.mail;
 
 import java.sql.SQLException;
 
 import com.idd.config.entity.Response;
-import com.idd.module.mail.EmailSender;
 import com.idd.shared.util.JsonHelper;
 
 public class SendEmailService {
@@ -16,13 +15,13 @@ public class SendEmailService {
             String ccEmails,
             String bccEmails,
             String inputData,
+            String caseId,
             String dataSourceName,
-            String aesKey,
-            String caseId
+            String aesKey
             
     ) throws SQLException {
     	Response r = new EmailSender(dataSourceName, aesKey)
-                .send(processCode, templateCode, version, caseId, toEmails, ccEmails, bccEmails, inputData);
+                .send(processCode, templateCode, version, toEmails, ccEmails, bccEmails, inputData, caseId);
     	
     	return JsonHelper.stringify(r);
     }

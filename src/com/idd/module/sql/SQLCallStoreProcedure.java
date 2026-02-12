@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -155,13 +156,13 @@ public class SQLCallStoreProcedure extends SQLConnector {
 		        if (param.getValue() == null) {
 		            cstmt.setNull(
 		            		param.getParamIndex(), 
-		            		SqlTypeUtils.toJdbcType(param.getSqlType())
+		            		toJdbcType(param.getSqlType())
 		            );
 		        } else {
 		            cstmt.setObject(
 		            		param.getParamIndex(), 
 		            		param.getValue(), 
-		            		SqlTypeUtils.toJdbcType(param.getSqlType())
+		            		toJdbcType(param.getSqlType())
 		            );
 		        }
 			}
@@ -169,7 +170,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 	    	if (param.isOut()) {
 				cstmt.registerOutParameter(
 						param.getParamIndex(), 
-						SqlTypeUtils.toJdbcType(param.getSqlType())
+						toJdbcType(param.getSqlType())
 				);
 			}
 	    }
@@ -214,4 +215,14 @@ public class SQLCallStoreProcedure extends SQLConnector {
 	    rs.close();
 	    return rows;
 	}
+	
+	public static int toJdbcType(String sqlType) {
+        try {
+            return Types.class
+                    .getField(sqlType.toUpperCase())
+                    .getInt(null);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unsupported SQL type: " + sqlType, e);
+        }
+    }
 }

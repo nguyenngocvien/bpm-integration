@@ -34,7 +34,7 @@ public class EmailSender extends SQLConnector{
 		this.emailSender = new SmtpEmailSender();
 	}
 
-	public Response send(String processCode, String templateCode, String version, String caseId, String toEmails, String ccEmails, String bccEmails, String inputData) {
+	public Response send(String processCode, String templateCode, String version, String toEmails, String ccEmails, String bccEmails, String inputData, String caseId) {
 		
 		String serviceName = processCode + "." + templateCode;
 		

@@ -1,4 +1,4 @@
-package com.idd.service;
+package com.idd.module.sql;
 
 import java.sql.SQLException;
 
@@ -17,7 +17,7 @@ public class SQLServiceTest {
 		}
 	}
 
-	private static Object loadTeamFilter() throws SQLException {
+	public static Object loadTeamFilter() throws SQLException {
 		
 		return new SQLService()
 					.callStoreProcedure(
@@ -34,11 +34,11 @@ public class SQLServiceTest {
 		
 		return new SQLService()
 					.callStoreProcedure(
-						"dataSourceTest", 
 						"SEARCH_USER",
 						"POSv1.0",
 						"{\"userName\":\"linhrm\"}",
-						"ssss"
+						"ssss",
+						"dataSourceTest"
 					);
 	}
 	

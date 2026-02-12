@@ -33,7 +33,7 @@ public class ExternalApiInvoker extends SQLConnector {
 		this.cryptoService = new CryptoService(Base64.getDecoder().decode(secretKey));
 	}
 
-	public Response execute(String serviceName, String version, String caseId, String input) {
+	public Response execute(String serviceName, String version, String input, String caseId) {
 		Map<String, Object> fromInput = new HashMap<>();
 		fromInput.put("serviceName", serviceName);
 		fromInput.put("version", version);
