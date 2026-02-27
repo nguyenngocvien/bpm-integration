@@ -11,11 +11,22 @@ public class SQLService {
             String version,
             String input,
             String caseId,
-            String dataSourceName
-    ) throws SQLException {
-    	Response result = new SQLCallStoreProcedure(dataSourceName)
+            String dataSourceName) throws SQLException {
+        Response result = new SQLCallStoreProcedure(dataSourceName)
                 .execute(serviceName, version, input, caseId);
-    	
-    	return JsonHelper.stringify(result);
+
+        return JsonHelper.stringify(result);
+    }
+
+    public String executeStatement(
+            String serviceName,
+            String version,
+            String input,
+            String caseId,
+            String dataSourceName) throws SQLException {
+        Response result = new SQLExecuteSatement(dataSourceName)
+                .execute(serviceName, version, input, caseId);
+
+        return JsonHelper.stringify(result);
     }
 }

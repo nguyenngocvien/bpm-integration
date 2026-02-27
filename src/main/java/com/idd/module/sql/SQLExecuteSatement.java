@@ -1,11 +1,10 @@
 package com.idd.module.sql;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,23 +19,21 @@ import com.idd.shared.util.BpmLogger;
 import com.idd.shared.util.JsonHelper;
 import com.idd.shared.util.LogHelper;
 
-public class SQLCallStoreProcedure extends SQLConnector {
+public class SQLExecuteSatement extends SQLConnector {
 
 	private final static String SYSTEM = "DB";
 	private final LogHelper logHelper;
 	private final ServiceConfigCache serviceConfigCache;
 
-	public SQLCallStoreProcedure(
-			String dataSourceName) {
+	public SQLExecuteSatement(String dataSourceName) {
 		super(dataSourceName);
 		this.logHelper = new LogHelper(dataSourceName);
 		this.serviceConfigCache = new ServiceConfigCache(dataSourceName);
 	}
 
 	public Response execute(String serviceName, String version, String input, String traceId) {
-
 		Connection conn = null;
-		CallableStatement cstmt = null;
+		PreparedStatement pstmt = null;
 
 		LogRecord log = LogRecord.init(
 				traceId,
@@ -56,6 +53,7 @@ public class SQLCallStoreProcedure extends SQLConnector {
 									serviceName,
 									version));
 				}
+
 				SQLConfig sqlConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), SQLConfig.class);
 				if (sqlConfig == null) {
 					throw new IllegalStateException(
@@ -64,19 +62,21 @@ public class SQLCallStoreProcedure extends SQLConnector {
 									serviceName,
 									version));
 				}
-				log.setService(sqlConfig.getPackageName() + "." + sqlConfig.getProcedureName());
 
-				String sql = SQLHelper.buildCallSql(sqlConfig);
-				cstmt = conn.prepareCall(sql);
+				String sql = sqlConfig.getSqlStatement();
+				if (sql == null || sql.trim().isEmpty()) {
+					throw new IllegalArgumentException("SQL statement is null or empty");
+				}
+				log.setService(sql);
+
+				pstmt = conn.prepareStatement(sql);
 
 				List<SQLParam> params = SQLHelper.parseParamValue(sqlConfig.getParams(), input);
 				log.setToInput(SQLHelper.buildInputLog(sql, params));
 
-				applyInputParams(cstmt, params);
+				applyInputParams(pstmt, params);
 
-				cstmt.execute();
-
-				Map<String, Object> output = extractOutParams(cstmt, sqlConfig.getParams());
+				Object output = executeByType(pstmt, sqlConfig.getDbExecuteType());
 				log.setFromOutput(JsonHelper.stringify(output));
 
 				Long logId = logHelper.saveSuccess(
@@ -86,7 +86,6 @@ public class SQLCallStoreProcedure extends SQLConnector {
 
 				return Response.success(output, logId);
 			} catch (IllegalArgumentException e) {
-
 				BpmLogger.warn("Invalid SQL configuration" + e);
 
 				Long logId = logHelper.saveError(log, e, ERROR_CODE.ERROR);
@@ -96,7 +95,6 @@ public class SQLCallStoreProcedure extends SQLConnector {
 						: e.getClass().getSimpleName();
 
 				return Response.error("EX-01", message, logId);
-
 			} catch (SQLException e) {
 				e.printStackTrace();
 				Long logId = logHelper.saveError(
@@ -118,18 +116,19 @@ public class SQLCallStoreProcedure extends SQLConnector {
 
 				return Response.error(ERROR_CODE.ERROR.getCode(), message, logId);
 			}
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			try {
-				if (cstmt != null)
-					cstmt.close();
+				if (pstmt != null) {
+					pstmt.close();
+				}
 			} catch (Exception e) {
 			}
 			try {
-				if (conn != null)
+				if (conn != null) {
 					conn.close();
+				}
 			} catch (Exception e) {
 			}
 		}
@@ -137,63 +136,48 @@ public class SQLCallStoreProcedure extends SQLConnector {
 		return Response.error(ERROR_CODE.ERROR.getCode(), ERROR_CODE.ERROR.getDefaultMessage());
 	}
 
-	private void applyInputParams(
-			CallableStatement cstmt,
-			List<SQLParam> params) throws SQLException {
-
+	private void applyInputParams(PreparedStatement pstmt, List<SQLParam> params) throws SQLException {
 		if (params == null) {
 			throw new IllegalArgumentException("SQL params is null");
 		}
 
 		for (SQLParam param : params) {
-
 			if (param == null) {
 				throw new IllegalArgumentException("SQLParam is null");
 			}
 
-			if (param.isIn()) {
-				if (param.getValue() == null) {
-					cstmt.setNull(
-							param.getParamIndex(),
-							toJdbcType(param.getSqlType()));
-				} else {
-					cstmt.setObject(
-							param.getParamIndex(),
-							param.getValue(),
-							toJdbcType(param.getSqlType()));
-				}
+			if (param.isOut()) {
+				throw new IllegalArgumentException("OUT or INOUT params are not supported for SQL statement");
 			}
 
-			if (param.isOut()) {
-				cstmt.registerOutParameter(
+			if (param.getValue() == null) {
+				pstmt.setNull(
 						param.getParamIndex(),
-						toJdbcType(param.getSqlType()));
+						SQLCallStoreProcedure.toJdbcType(param.getSqlType()));
+			} else {
+				pstmt.setObject(
+						param.getParamIndex(),
+						param.getValue(),
+						SQLCallStoreProcedure.toJdbcType(param.getSqlType()));
 			}
 		}
 	}
 
-	private Map<String, Object> extractOutParams(CallableStatement cstmt, List<SQLParam> params) throws SQLException {
+	private Object executeByType(PreparedStatement pstmt, SQLExecuteType executeType) throws SQLException {
+		SQLExecuteType type = executeType != null ? executeType : SQLExecuteType.QUERY;
 
-		Map<String, Object> outResult = new LinkedHashMap<>();
-
-		for (SQLParam param : params) {
-			if (param.isOut()) {
-				Object value = cstmt.getObject(param.getParamIndex());
-				if (value instanceof ResultSet) {
-					ResultSet rs = (ResultSet) value;
-					value = convertResultSet(rs);
-				}
-				outResult.put(param.getOutputMapping(), value);
-			}
-			;
+		if (type == SQLExecuteType.UPDATE) {
+			Map<String, Object> result = new LinkedHashMap<>();
+			result.put("affectedRows", pstmt.executeUpdate());
+			return result;
 		}
 
-		return outResult;
+		try (ResultSet rs = pstmt.executeQuery()) {
+			return convertResultSet(rs);
+		}
 	}
 
-	private List<Map<String, Object>> convertResultSet(ResultSet rs)
-			throws SQLException {
-
+	private List<Map<String, Object>> convertResultSet(ResultSet rs) throws SQLException {
 		List<Map<String, Object>> rows = new ArrayList<>();
 		ResultSetMetaData meta = rs.getMetaData();
 		int columnCount = meta.getColumnCount();
@@ -208,17 +192,6 @@ public class SQLCallStoreProcedure extends SQLConnector {
 			rows.add(row);
 		}
 
-		rs.close();
 		return rows;
-	}
-
-	public static int toJdbcType(String sqlType) {
-		try {
-			return Types.class
-					.getField(sqlType.toUpperCase())
-					.getInt(null);
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unsupported SQL type: " + sqlType, e);
-		}
 	}
 }

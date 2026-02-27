@@ -5,32 +5,31 @@ import java.util.List;
 
 public class SQLConfig {
 	private String dataSourceName;
-	
+
 	private SQLExecuteType dbExecuteType;
-	
-    private String sqlStatement;
-    
-    private String schema;
-    private String packageName;
-    private String procedureName;
-    
-    private List<SQLParam> params = new ArrayList<>();
-    
-    public SQLConfig procedureConfig (
-    		String dataSourceName, 
-    		String schema,
-    		String packageName,
-    		String procedureName,
-    		List<SQLParam> params
-    	) {
-    	this.dataSourceName = dataSourceName;
-    	this.dbExecuteType = SQLExecuteType.PROCEDURE;
-    	this.schema = schema;
-    	this.packageName = packageName;
-    	this.procedureName = procedureName;
-    	this.params = params;
-    	
-    	return this;
+
+	private String sqlStatement;
+
+	private String schema;
+	private String packageName;
+	private String procedureName;
+
+	private List<SQLParam> params = new ArrayList<>();
+
+	public SQLConfig procedureConfig(
+			String dataSourceName,
+			String schema,
+			String packageName,
+			String procedureName,
+			List<SQLParam> params) {
+		this.dataSourceName = dataSourceName;
+		this.dbExecuteType = SQLExecuteType.PROCEDURE;
+		this.schema = schema;
+		this.packageName = packageName;
+		this.procedureName = procedureName;
+		this.params = params;
+
+		return this;
 	}
 
 	public String getDataSourceName() {
@@ -61,4 +60,3 @@ public class SQLConfig {
 		return params;
 	}
 }
-
