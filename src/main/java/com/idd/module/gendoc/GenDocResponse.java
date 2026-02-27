@@ -1,19 +1,28 @@
 package com.idd.module.gendoc;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class GenDocResponse {
-    private String Code;
-    private String Message;
-    
+
+	@JsonProperty("Code")
+	private String code;
+
+	@JsonProperty("Message")
+	private String message;
+
 	public String getCode() {
-		return Code;
+		return code;
 	}
+
 	public void setCode(String code) {
-		Code = code;
+		this.code = code;
 	}
+
 	public String getMessage() {
-		return Message;
+		return message;
 	}
+
 	public void setMessage(String message) {
-		Message = message;
+		this.message = message;
 	}
 }

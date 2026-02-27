@@ -22,7 +22,7 @@ public class GendocInvoker extends SQLConnector {
 	private final LogHelper logHelper;
 	private final ServiceConfigCache serviceConfigCache;
 	private final CryptoService cryptoService;
-	
+
 	public GendocInvoker(String dataSourceName, String secretKey) {
 		super(dataSourceName);
 		this.logHelper = new LogHelper(dataSourceName);
@@ -36,70 +36,64 @@ public class GendocInvoker extends SQLConnector {
 		fromInput.put("version", version);
 		fromInput.put("caseId", caseId);
 		fromInput.put("input", request);
-		
+
 		LogRecord log = LogRecord.init(
-			caseId,
-            request.getTemplateFileName(),
-            JsonHelper.stringify(fromInput),
-            SYSTEM
-        );
-		
+				caseId,
+				request.getTemplateFileName(),
+				JsonHelper.stringify(fromInput),
+				SYSTEM);
+
 		Response response = null;
-		
+
 		try {
 			ServiceConfig serviceConfig = serviceConfigCache.get(serviceName, version);
 			if (serviceConfig == null) {
 				throw new IllegalStateException(
 						String.format(
-				                "Service config not found for serviceName=%s, version=%s",
-				                serviceName,
-				                version
-				            )
-						);
+								"Service config not found for serviceName=%s, version=%s",
+								serviceName,
+								version));
 			}
-			
-			ExternalApiConfig apiConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(), ExternalApiConfig.class);
+
+			ExternalApiConfig apiConfig = JsonHelper.parseObject(serviceConfig.getDetailConfig(),
+					ExternalApiConfig.class);
 			if (apiConfig == null) {
 				throw new IllegalStateException(
 						String.format(
-				                "Detail of service config is invalid for serviceName=%s, version=%s",
-				                serviceName,
-				                version
-				            )
-						);
+								"Detail of service config is invalid for serviceName=%s, version=%s",
+								serviceName,
+								version));
 			}
 			apiConfig.setPassword(cryptoService.decrypt(apiConfig.getPassword()));
-			
+
 			String body = JsonHelper.stringify(request);
 			log.setToInput(body);
-			
+
 			BasicAuthRestClient client = new BasicAuthRestClient(apiConfig.getUsername(), apiConfig.getPassword());
 			String result = client.execute(apiConfig.getUrl(), apiConfig.getMethod(), apiConfig.getTimeout(), body);
 			log.setFromOutput(result);
-			
+
 			GenDocResponse docResponse = JsonHelper.parseObject(result, GenDocResponse.class);
 			Long logId = logHelper.saveSuccess(
-                log,
-                serviceConfig.isLogEnabled(),
-                JsonHelper.stringify(result)
-            );
-			
+					log,
+					serviceConfig.isLogEnabled(),
+					JsonHelper.stringify(result));
+
 			response = Response.success(docResponse, logId);
-			
+
 		} catch (Exception e) {
 			Long logId = logHelper.saveError(
-                log,
-                e,
-                ERROR_CODE.ERROR
-            );
-			
+					log,
+					e,
+					ERROR_CODE.ERROR);
+
 			String message = e.getMessage() != null
-		            ? e.getMessage()
-		            : e.getClass().getSimpleName();
-			
+					? e.getMessage()
+					: e.getClass().getSimpleName();
+
 			response = Response.error(ERROR_CODE.ERROR.getCode(), message, logId);
 		}
-		
+
 		return response;
 	}
 }
