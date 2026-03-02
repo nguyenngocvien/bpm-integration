@@ -72,6 +72,10 @@ public class SQLExecuteSatement extends SQLConnector {
 				pstmt = conn.prepareStatement(sql);
 
 				List<SQLParam> params = SQLHelper.parseParamValue(sqlConfig.getParams(), input);
+				if (params == null) {
+					params = new ArrayList<>();
+				}
+
 				log.setToInput(SQLHelper.buildInputLog(sql, params));
 
 				applyInputParams(pstmt, params);
@@ -137,11 +141,12 @@ public class SQLExecuteSatement extends SQLConnector {
 	}
 
 	private void applyInputParams(PreparedStatement pstmt, List<SQLParam> params) throws SQLException {
-		if (params == null) {
-			throw new IllegalArgumentException("SQL params is null");
+		if (params == null || params.isEmpty()) {
+			return;
 		}
 
 		for (SQLParam param : params) {
+
 			if (param == null) {
 				throw new IllegalArgumentException("SQLParam is null");
 			}
