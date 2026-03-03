@@ -1,11 +1,19 @@
 package com.idd.module.sql;
 
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.idd.shared.util.JsonHelper;
+
+import oracle.jdbc.OracleTypes;
 
 public class SQLHelper {
 	public static String buildCallSql(SQLConfig config) {
@@ -75,4 +83,61 @@ public class SQLHelper {
 		input.put("params", params);
 		return JsonHelper.stringify(input);
 	}
+
+	public static int resolveJdbcType(String sqlType) {
+
+        if (sqlType == null) {
+            throw new IllegalArgumentException("sqlType is null");
+        }
+
+        switch (sqlType.toUpperCase()) {
+
+            case "VARCHAR":
+            case "VARCHAR2":
+                return Types.VARCHAR;
+
+            case "NUMBER":
+            case "NUMERIC":
+                return Types.NUMERIC;
+
+            case "DATE":
+                return Types.DATE;
+
+            case "TIMESTAMP":
+                return Types.TIMESTAMP;
+
+            case "CLOB":
+                return Types.CLOB;
+
+            case "REF_CURSOR":
+                return OracleTypes.CURSOR;
+
+            default:
+                throw new IllegalArgumentException("Unsupported SQL type: " + sqlType);
+        }
+    }
+
+	public static List<Map<String, Object>> convertResultSet(ResultSet rs)
+            throws SQLException {
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        if (rs == null) return rows;
+
+        ResultSetMetaData meta = rs.getMetaData();
+        int columnCount = meta.getColumnCount();
+
+        while (rs.next()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+
+            for (int i = 1; i <= columnCount; i++) {
+                row.put(meta.getColumnLabel(i), rs.getObject(i));
+            }
+
+            rows.add(row);
+        }
+
+        rs.close();
+        return rows;
+    }
 }

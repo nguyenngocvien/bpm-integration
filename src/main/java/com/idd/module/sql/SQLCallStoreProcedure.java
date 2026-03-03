@@ -1,12 +1,10 @@
 package com.idd.module.sql;
 
+import java.io.StringReader;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +17,8 @@ import com.idd.config.entity.ServiceConfig;
 import com.idd.shared.util.BpmLogger;
 import com.idd.shared.util.JsonHelper;
 import com.idd.shared.util.LogHelper;
+
+import oracle.jdbc.OracleTypes;
 
 public class SQLCallStoreProcedure extends SQLConnector {
 
@@ -138,87 +138,110 @@ public class SQLCallStoreProcedure extends SQLConnector {
 	}
 
 	private void applyInputParams(
-			CallableStatement cstmt,
-			List<SQLParam> params) throws SQLException {
+            CallableStatement cstmt,
+            List<SQLParam> params) throws SQLException {
 
-		if (params == null) {
-			throw new IllegalArgumentException("SQL params is null");
-		}
+        if (params == null) {
+            throw new IllegalArgumentException("SQL params is null");
+        }
 
-		for (SQLParam param : params) {
+        for (SQLParam param : params) {
 
-			if (param == null) {
-				throw new IllegalArgumentException("SQLParam is null");
-			}
+            if (param == null) {
+                throw new IllegalArgumentException("SQLParam is null");
+            }
 
-			if (param.isIn()) {
-				if (param.getValue() == null) {
-					cstmt.setNull(
-							param.getParamIndex(),
-							toJdbcType(param.getSqlType()));
-				} else {
-					cstmt.setObject(
-							param.getParamIndex(),
-							param.getValue(),
-							toJdbcType(param.getSqlType()));
-				}
-			}
+            int index = param.getParamIndex();
+            String sqlType = param.getSqlType() != null
+                    ? param.getSqlType().toUpperCase()
+                    : null;
 
-			if (param.isOut()) {
-				cstmt.registerOutParameter(
-						param.getParamIndex(),
-						toJdbcType(param.getSqlType()));
-			}
-		}
-	}
+            /* ================= IN ================= */
+            if (param.isIn()) {
 
-	private Map<String, Object> extractOutParams(CallableStatement cstmt, List<SQLParam> params) throws SQLException {
+                Object value = param.getValue();
 
-		Map<String, Object> outResult = new LinkedHashMap<>();
+                if (value == null) {
+                    cstmt.setNull(index, SQLHelper.resolveJdbcType(sqlType));
+                    continue;
+                }
 
-		for (SQLParam param : params) {
-			if (param.isOut()) {
-				Object value = cstmt.getObject(param.getParamIndex());
-				if (value instanceof ResultSet) {
-					ResultSet rs = (ResultSet) value;
-					value = convertResultSet(rs);
-				}
-				outResult.put(param.getOutputMapping(), value);
-			}
-			;
-		}
+                switch (sqlType) {
 
-		return outResult;
-	}
+                    case "CLOB":
+                        // Oracle safest way
+                        if (value instanceof String) {
+                            String str = (String) value;
+                            cstmt.setCharacterStream(index,
+                                    new StringReader(str),
+                                    str.length());
+                        } else {
+                            throw new IllegalArgumentException("CLOB must be String");
+                        }
+                        break;
 
-	private List<Map<String, Object>> convertResultSet(ResultSet rs)
-			throws SQLException {
+                    case "VARCHAR":
+                    case "VARCHAR2":
+                        cstmt.setString(index, value.toString());
+                        break;
 
-		List<Map<String, Object>> rows = new ArrayList<>();
-		ResultSetMetaData meta = rs.getMetaData();
-		int columnCount = meta.getColumnCount();
+                    case "NUMBER":
+                    case "NUMERIC":
+                        if (value instanceof Number) {
+                            cstmt.setObject(index, value);
+                        } else {
+                            cstmt.setObject(index, new java.math.BigDecimal(value.toString()));
+                        }
+                        break;
 
-		while (rs.next()) {
-			Map<String, Object> row = new LinkedHashMap<>();
-			for (int i = 1; i <= columnCount; i++) {
-				String colName = meta.getColumnLabel(i);
-				Object value = rs.getObject(i);
-				row.put(colName, value);
-			}
-			rows.add(row);
-		}
+                    default:
+                        // Do NOT force jdbcType here
+                        cstmt.setObject(index, value);
+                        break;
+                }
+            }
 
-		rs.close();
-		return rows;
-	}
+            /* ================= OUT ================= */
+            if (param.isOut()) {
 
-	public static int toJdbcType(String sqlType) {
-		try {
-			return Types.class
-					.getField(sqlType.toUpperCase())
-					.getInt(null);
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unsupported SQL type: " + sqlType, e);
-		}
-	}
+                if ("REF_CURSOR".equals(sqlType)) {
+
+                    cstmt.registerOutParameter(
+                            index,
+                            OracleTypes.CURSOR);
+
+                } else {
+
+                    cstmt.registerOutParameter(
+                            index,
+                            SQLHelper.resolveJdbcType(sqlType));
+                }
+            }
+        }
+    }
+
+	private Map<String, Object> extractOutParams(
+            CallableStatement cstmt,
+            List<SQLParam> params) throws SQLException {
+
+        Map<String, Object> outResult = new LinkedHashMap<>();
+
+        for (SQLParam param : params) {
+
+            if (!param.isOut()) continue;
+
+            Object value;
+
+            if ("REF_CURSOR".equalsIgnoreCase(param.getSqlType())) {
+                ResultSet rs = (ResultSet) cstmt.getObject(param.getParamIndex());
+                value = SQLHelper.convertResultSet(rs);
+            } else {
+                value = cstmt.getObject(param.getParamIndex());
+            }
+
+            outResult.put(param.getOutputMapping(), value);
+        }
+
+        return outResult;
+    }
 }
