@@ -86,58 +86,97 @@ public class SQLHelper {
 
 	public static int resolveJdbcType(String sqlType) {
 
-        if (sqlType == null) {
-            throw new IllegalArgumentException("sqlType is null");
-        }
+		if (sqlType == null) {
+			throw new IllegalArgumentException("sqlType is null");
+		}
 
-        switch (sqlType.toUpperCase()) {
+		switch (sqlType.toUpperCase()) {
 
-            case "VARCHAR":
-            case "VARCHAR2":
-                return Types.VARCHAR;
+			case "VARCHAR":
+			case "VARCHAR2":
+				return Types.VARCHAR;
 
-            case "NUMBER":
-            case "NUMERIC":
-                return Types.NUMERIC;
+			case "NUMBER":
+			case "NUMERIC":
+				return Types.NUMERIC;
 
-            case "DATE":
-                return Types.DATE;
+			case "DATE":
+				return Types.DATE;
 
-            case "TIMESTAMP":
-                return Types.TIMESTAMP;
+			case "TIMESTAMP":
+				return Types.TIMESTAMP;
 
-            case "CLOB":
-                return Types.CLOB;
+			case "CLOB":
+				return Types.CLOB;
 
-            case "REF_CURSOR":
-                return OracleTypes.CURSOR;
+			case "REF_CURSOR":
+				return OracleTypes.CURSOR;
 
-            default:
-                throw new IllegalArgumentException("Unsupported SQL type: " + sqlType);
-        }
-    }
+			default:
+				throw new IllegalArgumentException("Unsupported SQL type: " + sqlType);
+		}
+	}
 
 	public static List<Map<String, Object>> convertResultSet(ResultSet rs)
-            throws SQLException {
+			throws SQLException {
 
-        List<Map<String, Object>> rows = new ArrayList<>();
+		List<Map<String, Object>> rows = new ArrayList<>();
 
-        if (rs == null) return rows;
+		if (rs == null)
+			return rows;
 
-        ResultSetMetaData meta = rs.getMetaData();
-        int columnCount = meta.getColumnCount();
+		ResultSetMetaData meta = rs.getMetaData();
+		int columnCount = meta.getColumnCount();
 
-        while (rs.next()) {
-            Map<String, Object> row = new LinkedHashMap<>();
+		while (rs.next()) {
 
-            for (int i = 1; i <= columnCount; i++) {
-                row.put(meta.getColumnLabel(i), rs.getObject(i));
-            }
+			Map<String, Object> row = new LinkedHashMap<>();
 
-            rows.add(row);
-        }
+			for (int i = 1; i <= columnCount; i++) {
 
-        rs.close();
-        return rows;
-    }
+				String columnName = meta.getColumnLabel(i);
+				int columnType = meta.getColumnType(i);
+				Object value;
+
+				switch (columnType) {
+
+					case Types.CLOB:
+						java.sql.Clob clob = rs.getClob(i);
+						if (clob != null) {
+							value = clob.getSubString(1, (int) clob.length());
+						} else {
+							value = null;
+						}
+						break;
+
+					case Types.DATE:
+						java.sql.Date date = rs.getDate(i);
+						value = date != null ? date.toInstant().toString() : null;
+						break;
+
+					case Types.TIMESTAMP:
+						java.sql.Timestamp ts = rs.getTimestamp(i);
+						value = ts != null ? ts.toInstant().toString() : null;
+						break;
+
+					case Types.NUMERIC:
+					case Types.DECIMAL:
+						java.math.BigDecimal bd = rs.getBigDecimal(i);
+						value = bd;
+						break;
+
+					default:
+						value = rs.getObject(i);
+						break;
+				}
+
+				row.put(columnName, value);
+			}
+
+			rows.add(row);
+		}
+
+		rs.close();
+		return rows;
+	}
 }

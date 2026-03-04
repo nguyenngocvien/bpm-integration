@@ -138,110 +138,134 @@ public class SQLCallStoreProcedure extends SQLConnector {
 	}
 
 	private void applyInputParams(
-            CallableStatement cstmt,
-            List<SQLParam> params) throws SQLException {
+			CallableStatement cstmt,
+			List<SQLParam> params) throws SQLException {
 
-        if (params == null) {
-            throw new IllegalArgumentException("SQL params is null");
-        }
+		if (params == null) {
+			throw new IllegalArgumentException("SQL params is null");
+		}
 
-        for (SQLParam param : params) {
+		for (SQLParam param : params) {
 
-            if (param == null) {
-                throw new IllegalArgumentException("SQLParam is null");
-            }
+			if (param == null) {
+				throw new IllegalArgumentException("SQLParam is null");
+			}
 
-            int index = param.getParamIndex();
-            String sqlType = param.getSqlType() != null
-                    ? param.getSqlType().toUpperCase()
-                    : null;
+			int index = param.getParamIndex();
+			String sqlType = param.getSqlType() != null
+					? param.getSqlType().toUpperCase()
+					: null;
 
-            /* ================= IN ================= */
-            if (param.isIn()) {
+			/* ================= IN ================= */
+			if (param.isIn()) {
 
-                Object value = param.getValue();
+				Object value = param.getValue();
 
-                if (value == null) {
-                    cstmt.setNull(index, SQLHelper.resolveJdbcType(sqlType));
-                    continue;
-                }
+				if (value == null) {
+					cstmt.setNull(index, SQLHelper.resolveJdbcType(sqlType));
+					continue;
+				}
 
-                switch (sqlType) {
+				switch (sqlType) {
 
-                    case "CLOB":
-                        // Oracle safest way
-                        if (value instanceof String) {
-                            String str = (String) value;
-                            cstmt.setCharacterStream(index,
-                                    new StringReader(str),
-                                    str.length());
-                        } else {
-                            throw new IllegalArgumentException("CLOB must be String");
-                        }
-                        break;
+					case "CLOB":
+						// Oracle safest way
+						if (value instanceof String) {
+							String str = (String) value;
+							cstmt.setCharacterStream(index,
+									new StringReader(str),
+									str.length());
+						} else {
+							throw new IllegalArgumentException("CLOB must be String");
+						}
+						break;
 
-                    case "VARCHAR":
-                    case "VARCHAR2":
-                        cstmt.setString(index, value.toString());
-                        break;
+					case "VARCHAR":
+					case "VARCHAR2":
+						cstmt.setString(index, value.toString());
+						break;
 
-                    case "NUMBER":
-                    case "NUMERIC":
-                        if (value instanceof Number) {
-                            cstmt.setObject(index, value);
-                        } else {
-                            cstmt.setObject(index, new java.math.BigDecimal(value.toString()));
-                        }
-                        break;
+					case "NUMBER":
+					case "NUMERIC":
+						if (value instanceof Number) {
+							cstmt.setObject(index, value);
+						} else {
+							cstmt.setObject(index, new java.math.BigDecimal(value.toString()));
+						}
+						break;
 
-                    default:
-                        // Do NOT force jdbcType here
-                        cstmt.setObject(index, value);
-                        break;
-                }
-            }
+					default:
+						// Do NOT force jdbcType here
+						cstmt.setObject(index, value);
+						break;
+				}
+			}
 
-            /* ================= OUT ================= */
-            if (param.isOut()) {
+			/* ================= OUT ================= */
+			if (param.isOut()) {
 
-                if ("REF_CURSOR".equals(sqlType)) {
+				if ("REF_CURSOR".equals(sqlType)) {
 
-                    cstmt.registerOutParameter(
-                            index,
-                            OracleTypes.CURSOR);
+					cstmt.registerOutParameter(
+							index,
+							OracleTypes.CURSOR);
 
-                } else {
+				} else {
 
-                    cstmt.registerOutParameter(
-                            index,
-                            SQLHelper.resolveJdbcType(sqlType));
-                }
-            }
-        }
-    }
+					cstmt.registerOutParameter(
+							index,
+							SQLHelper.resolveJdbcType(sqlType));
+				}
+			}
+		}
+	}
 
 	private Map<String, Object> extractOutParams(
-            CallableStatement cstmt,
-            List<SQLParam> params) throws SQLException {
+			CallableStatement cstmt,
+			List<SQLParam> params) throws SQLException {
 
-        Map<String, Object> outResult = new LinkedHashMap<>();
+		Map<String, Object> outResult = new LinkedHashMap<>();
 
-        for (SQLParam param : params) {
+		for (SQLParam param : params) {
 
-            if (!param.isOut()) continue;
+			if (!param.isOut())
+				continue;
 
-            Object value;
+			Object value;
 
-            if ("REF_CURSOR".equalsIgnoreCase(param.getSqlType())) {
-                ResultSet rs = (ResultSet) cstmt.getObject(param.getParamIndex());
-                value = SQLHelper.convertResultSet(rs);
-            } else {
-                value = cstmt.getObject(param.getParamIndex());
-            }
+			if ("REF_CURSOR".equalsIgnoreCase(param.getSqlType())) {
 
-            outResult.put(param.getOutputMapping(), value);
-        }
+				ResultSet rs = null;
 
-        return outResult;
-    }
+				try {
+					rs = (ResultSet) cstmt.getObject(param.getParamIndex());
+					value = SQLHelper.convertResultSet(rs);
+				} finally {
+					if (rs != null) {
+						try {
+							rs.close();
+						} catch (Exception ignore) {
+						}
+					}
+				}
+
+			} else if ("CLOB".equalsIgnoreCase(param.getSqlType())) {
+
+				java.sql.Clob clob = cstmt.getClob(param.getParamIndex());
+				if (clob != null) {
+					value = clob.getSubString(1, (int) clob.length());
+				} else {
+					value = null;
+				}
+
+			} else {
+
+				value = cstmt.getObject(param.getParamIndex());
+			}
+
+			outResult.put(param.getOutputMapping(), value);
+		}
+
+		return outResult;
+	}
 }
