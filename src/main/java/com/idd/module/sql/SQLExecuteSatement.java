@@ -66,7 +66,6 @@ public class SQLExecuteSatement extends SQLConnector {
 				if (sql == null || sql.trim().isEmpty()) {
 					throw new IllegalArgumentException("SQL statement is null or empty");
 				}
-				log.setService(sql);
 
 				pstmt = conn.prepareStatement(sql);
 
