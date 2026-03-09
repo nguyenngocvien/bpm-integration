@@ -8,23 +8,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 public class EmailTemplateRepository extends SQLConnector {
-	
-	private static final String SQL = "SELECT * FROM ADM_TEMPLATE_OTT_MAIL WHERE PROCESS_CODE = ? AND TEMPLATE_TYPE = 'EMAIL' AND TEMPLATE_CODE = ? AND STATUS = 1";
 
-	public EmailTemplateRepository(String dataSourceName) {
-		super(dataSourceName);
-	}
-	
-	public EmailTemplate findActiveTemplate(
+    private static final String SQL = "SELECT * FROM ADM_TEMPLATE_OTT_MAIL WHERE PROCESS_CODE = ? AND TEMPLATE_TYPE = 'EMAIL' AND TEMPLATE_CODE = ? AND STATUS = 1";
+
+    public EmailTemplateRepository(String dataSourceName) {
+        super(dataSourceName);
+    }
+
+    public EmailTemplate findActiveTemplate(
             String processCode,
-            String templateCode
-    ) {
-		
-		Connection conn = null;
-		
-		try {
-			conn = getConnection();
-			
+            String templateCode) {
+
+        Connection conn = null;
+
+        try {
+            conn = getConnection();
+
             try (PreparedStatement ps = conn.prepareStatement(SQL)) {
 
                 ps.setString(1, processCode);
@@ -35,7 +34,7 @@ public class EmailTemplateRepository extends SQLConnector {
                     if (!rs.next()) {
                         return null;
                     }
-                    
+
                     EmailTemplate t = new EmailTemplate();
                     t.setId(rs.getLong("ID"));
                     t.setProcessCode(rs.getString("PROCESS_CODE"));
@@ -50,11 +49,14 @@ public class EmailTemplateRepository extends SQLConnector {
 
         } catch (Exception e) {
             BpmLogger.error(
-                "Load email template failed, templateCode=" + templateCode, e
-            );
+                    "Load email template failed, templateCode=" + templateCode, e);
             return null;
         } finally {
-        	try { if (conn != null) conn.close(); } catch (Exception e) {}
-		}
-	}
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (Exception e) {
+            }
+        }
+    }
 }
